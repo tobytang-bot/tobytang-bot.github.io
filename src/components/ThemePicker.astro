@@ -1,204 +1,352 @@
 ---
-// Theme picker: four swatches from dark to light, read as one bar.
-// Semantically a radio group (not <progress>/<input type=range>): arrows move
-// and select, Home/End jump to the ends. The ↺ button returns to the system
-// setting; it only shows once the reader has picked a theme.
-import { THEMES } from "../lib/themes";
+// Appearance menu: a header button opening a panel with the mode
+// (follow system / light / dark) and the color theme.
+// The color control looks like a discrete slider but is a radio group, so
+// screen readers announce theme names: arrows move and select, Home/End jump
+// to the ends. Dragging across it previews each theme and saves on release.
+// State and storage live in src/lib/theme-manager.ts.
+import { COLOR_THEMES, DARK_THEME, MODES } from "../lib/themes";
 ---
 
-<div class="theme-picker" data-theme-picker>
-  <div class="bar" role="radiogroup" aria-label="主题（由深到浅）">
-    {
-      THEMES.map((t) => (
-        <button
-          type="button"
-          class="swatch"
-          role="radio"
-          aria-checked="false"
-          aria-label={t.label}
-          title={t.label}
-          tabindex="-1"
-          data-theme-option={t.id}
-          data-scheme={t.scheme}
-          data-bg={t.bg}
-          style={`--swatch: ${t.bg}`}
-        />
-      ))
-    }
-  </div>
-  <button type="button" class="auto" aria-label="跟随系统" title="跟随系统" data-theme-follow-system hidden>
-    <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
-      <path
-        d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3M4.5 4v4h4"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="1.8"
-        stroke-linecap="round"
-        stroke-linejoin="round"></path>
+<div class="theme-menu" data-theme-menu>
+  <button
+    type="button"
+    class="trigger"
+    aria-expanded="false"
+    aria-controls="theme-panel"
+    title="外观"
+    data-theme-trigger
+  >
+    <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true">
+      <circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="1.8"></circle>
+      <path d="M12 4a8 8 0 0 1 0 16Z" fill="currentColor"></path>
     </svg>
+    <span class="visually-hidden">外观</span>
   </button>
+
+  <div class="panel" id="theme-panel" role="group" aria-labelledby="theme-panel-title" hidden data-theme-panel>
+    <p class="title" id="theme-panel-title">外观</p>
+
+    <p class="label" id="theme-mode-label">模式</p>
+    <div class="modes" role="radiogroup" aria-labelledby="theme-mode-label" data-theme-modes>
+      {
+        MODES.map((m) => (
+          <button type="button" role="radio" aria-checked="false" tabindex="-1" data-mode={m.id}>
+            {m.label}
+          </button>
+        ))
+      }
+    </div>
+
+    <p class="label" id="theme-color-label">配色</p>
+    <div class="slider" role="radiogroup" aria-labelledby="theme-color-label" data-theme-slider>
+      <span class="track" aria-hidden="true"></span>
+      {
+        COLOR_THEMES.map((t) => (
+          <button
+            type="button"
+            class="stop"
+            role="radio"
+            aria-checked="false"
+            tabindex="-1"
+            data-color={t.id}
+            style={`--swatch: ${t.swatch}`}
+          >
+            <span class="dot" aria-hidden="true" />
+            <span class="name">{t.label}</span>
+          </button>
+        ))
+      }
+    </div>
+    <p class="hint" data-theme-hint hidden>
+      深色模式使用「{DARK_THEME.label}」配色，选择一种配色将切换到浅色。
+    </p>
+  </div>
 </div>
 
 <script>
-  import { SYSTEM_THEME } from "../lib/themes";
+  import { previewColor, setColor, setMode, subscribe } from "../lib/theme-manager";
+  import type { ColorThemeId, ThemeMode } from "../lib/themes";
 
-  const root = document.documentElement;
-  const media = window.matchMedia("(prefers-color-scheme: dark)");
-  // Query inside pickers only: <html> itself carries data-theme-* attributes.
-  const pickers = [...document.querySelectorAll<HTMLElement>("[data-theme-picker]")];
-  const radios = pickers.flatMap((p) => [
-    ...p.querySelectorAll<HTMLButtonElement>("[data-theme-option]"),
-  ]);
-  const autoButtons = pickers.flatMap((p) => [
-    ...p.querySelectorAll<HTMLButtonElement>("[data-theme-follow-system]"),
-  ]);
-  const meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
-
-  const store = (value: string | null) => {
-    try {
-      if (value) localStorage.setItem("theme", value);
-      else localStorage.removeItem("theme");
-    } catch {
-      // Storage unavailable (private mode): the choice lasts for this page only.
-    }
-  };
-
-  function apply(id: string) {
-    const option = radios.find((r) => r.dataset.themeOption === id);
-    if (!option) return;
-    root.dataset.theme = id;
-    root.dataset.scheme = option.dataset.scheme;
-    meta?.setAttribute("content", option.dataset.bg!);
-    sync();
-  }
-
-  function sync() {
-    const auto = "themeAuto" in root.dataset;
-    for (const r of radios) {
-      const checked = r.dataset.themeOption === root.dataset.theme;
-      r.setAttribute("aria-checked", String(checked));
-      r.tabIndex = checked ? 0 : -1;
-    }
-    for (const b of autoButtons) b.hidden = auto;
-  }
-
-  function choose(id: string) {
-    delete root.dataset.themeAuto;
-    store(id);
-    apply(id);
-  }
-
-  const systemTheme = () => SYSTEM_THEME[media.matches ? "dark" : "light"];
-
-  radios.forEach((radio, i) => {
-    radio.addEventListener("click", () => choose(radio.dataset.themeOption!));
-    radio.addEventListener("keydown", (e) => {
-      const last = radios.length - 1;
-      const next =
-        e.key === "ArrowRight" || e.key === "ArrowDown" ? (i === last ? 0 : i + 1)
-        : e.key === "ArrowLeft" || e.key === "ArrowUp" ? (i === 0 ? last : i - 1)
-        : e.key === "Home" ? 0
-        : e.key === "End" ? last
-        : -1;
-      if (next < 0) return;
-      e.preventDefault();
-      choose(radios[next].dataset.themeOption!);
-      radios[next].focus();
-    });
-  });
-
-  for (const button of autoButtons) {
-    button.addEventListener("click", () => {
-      root.dataset.themeAuto = "";
-      store(null);
-      apply(systemTheme());
-      radios.find((r) => r.tabIndex === 0)?.focus();
+  // Moves and selects with arrows / Home / End, like a native radio group.
+  function roving(buttons: HTMLButtonElement[], select: (b: HTMLButtonElement) => void) {
+    buttons.forEach((button, i) => {
+      button.addEventListener("keydown", (e) => {
+        const last = buttons.length - 1;
+        const next =
+          e.key === "ArrowRight" || e.key === "ArrowDown" ? (i === last ? 0 : i + 1)
+          : e.key === "ArrowLeft" || e.key === "ArrowUp" ? (i === 0 ? last : i - 1)
+          : e.key === "Home" ? 0
+          : e.key === "End" ? last
+          : -1;
+        if (next < 0) return;
+        e.preventDefault();
+        select(buttons[next]);
+        buttons[next].focus();
+      });
     });
   }
 
-  media.addEventListener("change", () => {
-    if ("themeAuto" in root.dataset) apply(systemTheme());
-  });
+  function check(buttons: HTMLButtonElement[], selected: HTMLButtonElement | undefined) {
+    for (const b of buttons) {
+      b.setAttribute("aria-checked", String(b === selected));
+      b.tabIndex = b === selected ? 0 : -1;
+    }
+  }
 
-  sync();
+  for (const menu of document.querySelectorAll<HTMLElement>("[data-theme-menu]")) {
+    const trigger = menu.querySelector<HTMLButtonElement>("[data-theme-trigger]")!;
+    const panel = menu.querySelector<HTMLElement>("[data-theme-panel]")!;
+    const slider = menu.querySelector<HTMLElement>("[data-theme-slider]")!;
+    const hint = menu.querySelector<HTMLElement>("[data-theme-hint]")!;
+    const modes = [...menu.querySelectorAll<HTMLButtonElement>("[data-mode]")];
+    const stops = [...menu.querySelectorAll<HTMLButtonElement>("[data-color]")];
+
+    // Open / close
+    const setOpen = (open: boolean) => {
+      panel.hidden = !open;
+      trigger.setAttribute("aria-expanded", String(open));
+      if (open) modes.find((b) => b.tabIndex === 0)?.focus();
+    };
+    trigger.addEventListener("click", () => setOpen(trigger.ariaExpanded !== "true"));
+    menu.addEventListener("keydown", (e) => {
+      if (e.key !== "Escape" || panel.hidden) return;
+      setOpen(false);
+      trigger.focus();
+    });
+    document.addEventListener("pointerdown", (e) => {
+      if (!panel.hidden && !menu.contains(e.target as Node)) setOpen(false);
+    });
+    menu.addEventListener("focusout", (e) => {
+      if (!panel.hidden && !menu.contains(e.relatedTarget as Node | null) && e.relatedTarget) setOpen(false);
+    });
+
+    // Mode
+    for (const b of modes) b.addEventListener("click", () => setMode(b.dataset.mode as ThemeMode));
+    roving(modes, (b) => setMode(b.dataset.mode as ThemeMode));
+
+    // Color: click / keys save directly; dragging previews, release saves.
+    const colorOf = (b: HTMLButtonElement) => b.dataset.color as ColorThemeId;
+    for (const b of stops) b.addEventListener("click", () => setColor(colorOf(b)));
+    roving(stops, (b) => setColor(colorOf(b)));
+
+    const nearest = (x: number) => {
+      let best = stops[0];
+      let bestDistance = Infinity;
+      for (const b of stops) {
+        const r = b.getBoundingClientRect();
+        const distance = Math.abs(r.left + r.width / 2 - x);
+        if (distance < bestDistance) [best, bestDistance] = [b, distance];
+      }
+      return best;
+    };
+    let dragging = false;
+    slider.addEventListener("pointerdown", (e) => {
+      if (e.button !== 0) return;
+      dragging = true;
+      slider.setPointerCapture(e.pointerId);
+      previewColor(colorOf(nearest(e.clientX)));
+    });
+    slider.addEventListener("pointermove", (e) => {
+      if (dragging) previewColor(colorOf(nearest(e.clientX)));
+    });
+    slider.addEventListener("pointerup", (e) => {
+      if (!dragging) return;
+      dragging = false;
+      const b = nearest(e.clientX);
+      setColor(colorOf(b));
+      b.focus();
+    });
+    slider.addEventListener("pointercancel", () => {
+      dragging = false;
+      previewColor(null);
+    });
+
+    subscribe((state) => {
+      check(modes, modes.find((b) => b.dataset.mode === state.mode));
+      check(stops, stops.find((b) => b.dataset.color === state.color));
+      // The dot under the pointer while dragging.
+      for (const b of stops) b.toggleAttribute("data-preview", b.dataset.color === state.preview);
+      slider.toggleAttribute("data-dark", state.isDark && !state.preview);
+      hint.hidden = !state.isDark;
+    });
+  }
 </script>
 
 <style>
-  .theme-picker {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.25rem;
-  }
-
-  /* Four swatches joined into one bar, darkest on the left. */
-  .bar {
-    display: inline-flex;
-    gap: 2px;
-    padding: 2px;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    background: var(--surface);
-  }
-
-  .swatch {
+  .theme-menu {
     position: relative;
-    width: 18px;
-    height: 16px;
+  }
+
+  .trigger {
+    display: inline-grid;
+    place-items: center;
+    width: 2.25rem;
+    height: 2.25rem;
     padding: 0;
     border: 0;
-    border-radius: 3px;
-    background: var(--swatch);
-    /* Keeps light swatches visible on light headers and dark ones on dark. */
-    box-shadow: inset 0 0 0 1px rgb(128 128 128 / 0.35);
+    border-radius: var(--radius);
+    background: none;
+    color: var(--ink-2);
     cursor: pointer;
   }
 
-  .swatch:first-child {
-    border-radius: 6px 3px 3px 6px;
+  .trigger:hover,
+  .trigger[aria-expanded="true"] {
+    color: var(--ink);
+    background: var(--surface-2);
   }
 
-  .swatch:last-child {
-    border-radius: 3px 6px 6px 3px;
+  .panel {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    right: 0;
+    z-index: 50;
+    width: min(19rem, calc(100vw - 2rem));
+    padding: 1rem;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface);
+    box-shadow: 0 8px 30px rgb(0 0 0 / 0.12);
   }
 
-  /* Selected: Liquid Glass rim gradient ring. */
-  .swatch[aria-checked="true"]::after {
+  .panel[hidden] {
+    display: none;
+  }
+
+  .title {
+    margin: 0 0 0.75rem;
+    font-weight: 600;
+  }
+
+  .label {
+    margin: 0 0 0.4rem;
+    color: var(--ink-3);
+    font-size: var(--text-xs);
+  }
+
+  /* Mode: segmented control */
+  .modes {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+    margin-bottom: 1rem;
+    padding: 2px;
+    border-radius: var(--radius);
+    background: var(--surface-2);
+  }
+
+  .modes button {
+    min-height: 2rem;
+    padding: 0 0.25rem;
+    border: 0;
+    border-radius: 6px;
+    background: none;
+    color: var(--ink-2);
+    font: inherit;
+    font-size: var(--text-sm);
+    cursor: pointer;
+  }
+
+  .modes button[aria-checked="true"] {
+    background: var(--surface);
+    color: var(--ink);
+    font-weight: 550;
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.12);
+  }
+
+  /* Color: discrete slider. Each stop is a full-width column so the touch
+     target stays large; the dot is drawn inside it. */
+  .slider {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    touch-action: pan-y;
+    user-select: none;
+  }
+
+  .track {
+    position: absolute;
+    top: 1.125rem;
+    left: 10%;
+    right: 10%;
+    height: 2px;
+    border-radius: 1px;
+    background: var(--border);
+  }
+
+  .stop {
+    position: relative;
+    display: grid;
+    justify-items: center;
+    gap: 0.35rem;
+    padding: 0.5rem 0 0.25rem;
+    border: 0;
+    border-radius: var(--radius);
+    background: none;
+    color: var(--ink-3);
+    font: inherit;
+    font-size: var(--text-xs);
+    cursor: pointer;
+  }
+
+  .dot {
+    position: relative;
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: 50%;
+    background: var(--swatch);
+    /* Keeps light swatches visible on light panels and on slate. */
+    box-shadow: inset 0 0 0 1px rgb(128 128 128 / 0.4);
+    transition: transform 120ms ease;
+  }
+
+  .stop:hover .dot,
+  .stop[data-preview] .dot {
+    transform: scale(1.15);
+  }
+
+  /* Selected: larger dot with the Liquid Glass rim gradient ring. */
+  .stop[aria-checked="true"] {
+    color: var(--ink);
+    font-weight: 550;
+  }
+
+  .stop[aria-checked="true"] .dot {
+    transform: scale(1.2);
+  }
+
+  .stop[aria-checked="true"] .dot::after {
     content: "";
     position: absolute;
-    inset: -3px;
+    inset: -4px;
     padding: 2px;
-    border-radius: inherit;
+    border-radius: 50%;
     background: var(--rim-gradient);
     -webkit-mask:
       linear-gradient(#000 0 0) content-box,
       linear-gradient(#000 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
-    pointer-events: none;
   }
 
-  .swatch:focus-visible {
-    outline-offset: 4px;
+  /* In dark mode the saved color is kept but not in use. */
+  .slider[data-dark] .stop[aria-checked="true"] .dot::after {
+    opacity: 0.45;
   }
 
-  .auto {
-    display: inline-grid;
-    place-items: center;
-    width: 1.75rem;
-    height: 1.75rem;
-    padding: 0;
-    border: 0;
-    border-radius: var(--radius);
-    background: none;
+  .name {
+    white-space: nowrap;
+  }
+
+  .hint {
+    margin: 0.6rem 0 0;
     color: var(--ink-3);
-    cursor: pointer;
+    font-size: var(--text-xs);
+    line-height: 1.5;
   }
 
-  .auto[hidden] {
+  .hint[hidden] {
     display: none;
-  }
-
-  .auto:hover {
-    color: var(--ink);
   }
 </style>

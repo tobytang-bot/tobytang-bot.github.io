@@ -1,104 +1,150 @@
-/* Color themes, darkest to lightest: midnight, graphite, mist, paper.
-   The head script sets data-theme (palette) and data-scheme (dark | light)
-   before first paint. Without JS, the fallback at the bottom follows the
-   system setting with graphite or paper.
+/* Color themes. Light palettes: ivory, sage, mist, lavender, sand (the
+   reader's color choice); dark palette: slate. The head script sets
+   data-theme (palette) and data-scheme (dark | light) before first paint.
+   Without JS, mist is the default and the fallback at the bottom follows a
+   dark system setting with slate.
    Every text/background pair is checked by scripts/check-contrast.mjs. */
 
 :root,
-:root[data-theme="paper"] {
-  color-scheme: light;
-  --bg: #f7f8fa;
-  --surface: #ffffff;
-  --surface-2: #eff1f5;
-  --border: #e1e4ea;
-  --ink: #1c2330;
-  --ink-2: #4a5263;
-  --ink-3: #636b7c;
-  --accent: #5b5bd6;
-  --accent-soft: #ececfb;
-  --code-bg: #ffffff;
-  --glass: rgb(247 248 250 / 0.72);
-  --status-investigating: #9a6212;
-  --status-solved: #1a7a42;
-  --status-reference: #2862c7;
-  --status-deprecated: #6b7282;
-}
-
 :root[data-theme="mist"] {
   color-scheme: light;
-  --bg: #e8ebf0;
-  --surface: #f2f4f7;
-  --surface-2: #dfe3e9;
-  --border: #d0d5de;
-  --ink: #1c2330;
-  --ink-2: #444c5c;
-  --ink-3: #555d6e;
-  --accent: #4b4bc4;
-  --accent-soft: #d9d9f3;
+  --bg: #eef2f5;
+  --surface: #f7f9fa;
+  --surface-2: #e6ebee;
+  --border: #dce2e6;
+  --ink: #30373d;
+  --ink-2: #485057;
+  --ink-3: #606971;
+  --accent: #5a6f7f;
+  --accent-soft: #e2e8ec;
+  --on-accent: #ffffff;
   --code-bg: #fafbfc;
-  --glass: rgb(232 235 240 / 0.72);
+  --glass: rgb(238 242 245 / 0.72);
   --status-investigating: #8a560c;
   --status-solved: #16703c;
   --status-reference: #2359b8;
-  --status-deprecated: #5f6676;
+  --status-deprecated: #606971;
 }
 
-:root[data-theme="graphite"] {
+:root[data-theme="ivory"] {
+  color-scheme: light;
+  --bg: #f7f6f2;
+  --surface: #fcfbf8;
+  --surface-2: #efeeea;
+  --border: #e2e0d9;
+  --ink: #2f312f;
+  --ink-2: #4c4e4b;
+  --ink-3: #686a67;
+  --accent: #5b765f;
+  --accent-soft: #e5eae2;
+  --on-accent: #ffffff;
+  --code-bg: #fdfdfb;
+  --glass: rgb(247 246 242 / 0.72);
+  --status-investigating: #8a560c;
+  --status-solved: #16703c;
+  --status-reference: #2359b8;
+  --status-deprecated: #686a67;
+}
+
+:root[data-theme="sage"] {
+  color-scheme: light;
+  --bg: #eef2ec;
+  --surface: #f7f9f6;
+  --surface-2: #e6ebe5;
+  --border: #dce4da;
+  --ink: #2f3831;
+  --ink-2: #48514a;
+  --ink-3: #616a63;
+  --accent: #59725d;
+  --accent-soft: #e1e9e1;
+  --on-accent: #ffffff;
+  --code-bg: #fafbfa;
+  --glass: rgb(238 242 236 / 0.72);
+  --status-investigating: #8a560c;
+  --status-solved: #16703c;
+  --status-reference: #2359b8;
+  --status-deprecated: #616a63;
+}
+
+:root[data-theme="lavender"] {
+  color-scheme: light;
+  --bg: #f3f0f5;
+  --surface: #faf8fb;
+  --surface-2: #ece8ee;
+  --border: #e4dee7;
+  --ink: #38333c;
+  --ink-2: #524c56;
+  --ink-3: #6b656f;
+  --accent: #756783;
+  --accent-soft: #e8e4ec;
+  --on-accent: #ffffff;
+  --code-bg: #fcfbfd;
+  --glass: rgb(243 240 245 / 0.72);
+  --status-investigating: #8a560c;
+  --status-solved: #16703c;
+  --status-reference: #2359b8;
+  --status-deprecated: #6b656f;
+}
+
+:root[data-theme="sand"] {
+  color-scheme: light;
+  --bg: #f4f0e8;
+  --surface: #faf8f3;
+  --surface-2: #ede9e1;
+  --border: #e5ded0;
+  --ink: #3d3933;
+  --ink-2: #555049;
+  --ink-3: #6d675f;
+  --accent: #7c6853;
+  --accent-soft: #ece5dc;
+  --on-accent: #ffffff;
+  --code-bg: #fcfbf8;
+  --glass: rgb(244 240 232 / 0.72);
+  --status-investigating: #8a560c;
+  --status-solved: #16703c;
+  --status-reference: #2359b8;
+  --status-deprecated: #6d675f;
+}
+
+:root[data-theme="slate"] {
   color-scheme: dark;
-  --bg: #161a21;
-  --surface: #1d222b;
-  --surface-2: #232935;
-  --border: #2c3340;
-  --ink: #e6e9ef;
-  --ink-2: #aab1bf;
-  --ink-3: #8b93a5;
-  --accent: #9b9bf5;
-  --accent-soft: #272a45;
-  --code-bg: #1b2029;
-  --glass: rgb(22 26 33 / 0.7);
+  --bg: #202326;
+  --surface: #282c30;
+  --surface-2: #2f3337;
+  --border: #383d41;
+  --ink: #d8dad9;
+  --ink-2: #a8adaa;
+  --ink-3: #999d9c;
+  --accent: #8ca89a;
+  --accent-soft: #363d3f;
+  --on-accent: #1b1e21;
+  --code-bg: #24282b;
+  --glass: rgb(32 35 38 / 0.72);
   --status-investigating: #e0a44a;
   --status-solved: #4cc07f;
   --status-reference: #6b9df0;
-  --status-deprecated: #8b93a5;
+  --status-deprecated: #999d9c;
 }
 
-:root[data-theme="midnight"] {
-  color-scheme: dark;
-  --bg: #0e1116;
-  --surface: #151920;
-  --surface-2: #1b2029;
-  --border: #262c37;
-  --ink: #e8ebf0;
-  --ink-2: #a7aebb;
-  --ink-3: #858d9e;
-  --accent: #9b9bf5;
-  --accent-soft: #24264a;
-  --code-bg: #12151b;
-  --glass: rgb(14 17 22 / 0.72);
-  --status-investigating: #e0a44a;
-  --status-solved: #4cc07f;
-  --status-reference: #6b9df0;
-  --status-deprecated: #858d9e;
-}
-
-/* No-JS fallback: follow the system with graphite. Keep in sync with graphite above. */
+/* No-JS fallback: follow a dark system setting with slate. Keep in sync with slate above. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme]) {
     color-scheme: dark;
-    --bg: #161a21;
-    --surface: #1d222b;
-    --surface-2: #232935;
-    --border: #2c3340;
-    --ink: #e6e9ef;
-    --ink-2: #aab1bf;
-    --ink-3: #8b93a5;
-    --accent: #9b9bf5;
-    --accent-soft: #272a45;
-    --code-bg: #1b2029;
-    --glass: rgb(22 26 33 / 0.7);
+    --bg: #202326;
+    --surface: #282c30;
+    --surface-2: #2f3337;
+    --border: #383d41;
+    --ink: #d8dad9;
+    --ink-2: #a8adaa;
+    --ink-3: #999d9c;
+    --accent: #8ca89a;
+    --accent-soft: #363d3f;
+    --on-accent: #1b1e21;
+    --code-bg: #24282b;
+    --glass: rgb(32 35 38 / 0.72);
     --status-investigating: #e0a44a;
     --status-solved: #4cc07f;
     --status-reference: #6b9df0;
-    --status-deprecated: #8b93a5;
+    --status-deprecated: #999d9c;
   }
 }

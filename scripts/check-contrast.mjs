@@ -1,6 +1,6 @@
 // Checks WCAG AA contrast (4.5:1) for every text/background pair used by
 // each theme in src/styles/themes.css, and that the no-JS fallback matches
-// graphite. Exits non-zero on failure so `npm run build` stops.
+// slate. Exits non-zero on failure so `npm run build` stops.
 import { readFileSync } from "node:fs";
 
 const MIN = 4.5;
@@ -15,6 +15,7 @@ const PAIRS = [
   ["ink-2", ["bg", "surface", "surface-2"]],
   ["ink-3", ["bg", "surface", "surface-2"]],
   ["accent", ["bg", "surface"]],
+  ["on-accent", ["accent"]],
   ["status-investigating", ["bg", "surface"]],
   ["status-solved", ["bg", "surface"]],
   ["status-reference", ["bg", "surface"]],
@@ -69,9 +70,9 @@ for (const [name, vars] of themes) {
 }
 
 const fallback = themes.get("fallback");
-const graphite = themes.get("graphite");
-if (fallback && graphite && JSON.stringify(fallback) !== JSON.stringify(graphite)) {
-  failures.push("fallback (no-JS dark) differs from graphite; keep them in sync");
+const slate = themes.get("slate");
+if (fallback && slate && JSON.stringify(fallback) !== JSON.stringify(slate)) {
+  failures.push("fallback (no-JS dark) differs from slate; keep them in sync");
 }
 
 if (failures.length) {
