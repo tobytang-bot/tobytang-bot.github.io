@@ -4,35 +4,53 @@ import ListLayout from "../../layouts/ListLayout.astro";
 import ArticleList from "../../components/ArticleList.astro";
 import TopicTree from "../../components/TopicTree.astro";
 import { getArticles } from "../../lib/content";
+import { getResources, KIND_LABEL, resourceUrl } from "../../lib/resources";
 import {
   ancestry,
-  articlesInTopic,
   findNode,
   getTopics,
+  inTopic,
   topicTree,
   topicUrl,
   type Topic,
 } from "../../lib/topics";
 
-// Only topics with at least one article (directly or via a subtopic) get a page.
+// Only topics with at least one article or resource (directly or via a subtopic) get a page.
 export const getStaticPaths = (async () => {
-  const [articles, topics] = await Promise.all([getArticles(), getTopics()]);
+  const [articles, resources, topics] = await Promise.all([
+    getArticles(),
+    getResources(),
+    getTopics(),
+  ]);
+  const items = [...articles, ...resources];
   return [...topics.values()]
-    .filter((t) => articlesInTopic(t.id, articles, topics).length > 0)
+    .filter((t) => inTopic(t.id, items, topics).length > 0)
     .map((topic) => ({ params: { id: topic.id }, props: { topic } }));
 }) satisfies GetStaticPaths;
 
 const { topic } = Astro.props as { topic: Topic };
-const [articles, topics] = await Promise.all([getArticles(), getTopics()]);
-const entries = articlesInTopic(topic.id, articles, topics);
+const [articles, resources, topics] = await Promise.all([
+  getArticles(),
+  getResources(),
+  getTopics(),
+]);
+const entries = inTopic(topic.id, articles, topics);
+const shared = inTopic(topic.id, resources, topics);
 const parents = ancestry(topic.id, topics).slice(0, -1);
-const subtopics = findNode(topicTree(articles, topics), topic.id)?.children ?? [];
-const count = entries.length;
+const subtopics =
+  findNode(topicTree([...articles, ...resources], topics), topic.id)?.children ?? [];
+
+const summary = [
+  entries.length > 0 && `${entries.length} 篇文章`,
+  shared.length > 0 && `${shared.length} 个资源`,
+]
+  .filter(Boolean)
+  .join("、");
 ---
 
 <ListLayout
   title={topic.data.title}
-  description={`${count} 篇与 ${topic.data.title} 相关的 Worklog 和 Knowledge。`}
+  description={`与 ${topic.data.title} 相关的 ${summary}。`}
   crumbs={[
     { title: "Topics", url: "/topics/" },
     ...parents.map((p) => ({ title: p.data.title, url: topicUrl(p.id) })),
@@ -46,8 +64,63 @@ const count = entries.length;
       </section>
     )
   }
-  <section>
-    <h2>文章</h2>
-    <ArticleList entries={entries} />
-  </section>
+  {
+    entries.length > 0 && (
+      <section>
+        <h2>文章</h2>
+        <ArticleList entries={entries} />
+      </section>
+    )
+  }
+  {
+    shared.length > 0 && (
+      <section>
+        <h2>资源</h2>
+        <ul class="resources">
+          {shared.map((r) => (
+            <li>
+              <a href={resourceUrl(r)}>{r.data.title}</a>
+              <p>{r.data.description}</p>
+              <span>{KIND_LABEL[r.data.kind]}</span>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )
+  }
 </ListLayout>
+
+<style>
+  .resources {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border-top: 1px solid var(--border);
+  }
+
+  li {
+    padding: 1.1rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  a {
+    font-size: var(--text-lg);
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  a:hover {
+    color: var(--accent);
+  }
+
+  p {
+    margin: 0.3rem 0 0.5rem;
+    color: var(--ink-2);
+    line-height: 1.6;
+  }
+
+  span {
+    color: var(--ink-3);
+    font-size: var(--text-sm);
+  }
+</style>

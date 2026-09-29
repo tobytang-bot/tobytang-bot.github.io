@@ -37,3 +37,8 @@
   parent: ai
 - id: astro
   title: Astro
+- id: frontend
+  title: Frontend
+- id: design
+  title: Design
+  parent: frontend

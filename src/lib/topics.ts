@@ -1,12 +1,16 @@
 import { getCollection, type CollectionEntry } from "astro:content";
-import type { Article } from "./content";
 
 export type Topic = CollectionEntry<"topics">;
+
+/** Anything filed under topics: articles and resources. */
+export interface Tagged {
+  data: { topics: { id: string }[] };
+}
 
 export interface TopicNode {
   topic: Topic;
   children: TopicNode[];
-  /** Articles tagged with this topic or any descendant. */
+  /** Items (articles and resources) tagged with this topic or any descendant. */
   count: number;
 }
 
@@ -42,13 +46,9 @@ export function descendants(id: string, topics: Map<string, Topic>): Set<string>
   return ids;
 }
 
-export function articlesInTopic(
-  id: string,
-  articles: Article[],
-  topics: Map<string, Topic>,
-): Article[] {
+export function inTopic<T extends Tagged>(id: string, items: T[], topics: Map<string, Topic>): T[] {
   const ids = descendants(id, topics);
-  return articles.filter((a) => a.data.topics.some((t) => ids.has(t.id)));
+  return items.filter((item) => item.data.topics.some((t) => ids.has(t.id)));
 }
 
 export function findNode(nodes: TopicNode[], id: string): TopicNode | undefined {
@@ -58,14 +58,14 @@ export function findNode(nodes: TopicNode[], id: string): TopicNode | undefined 
   }
 }
 
-export function topicTree(articles: Article[], topics: Map<string, Topic>): TopicNode[] {
+export function topicTree(items: Tagged[], topics: Map<string, Topic>): TopicNode[] {
   const build = (parent: string | undefined): TopicNode[] =>
     [...topics.values()]
       .filter((t) => t.data.parent?.id === parent)
       .map((topic) => ({
         topic,
         children: build(topic.id),
-        count: articlesInTopic(topic.id, articles, topics).length,
+        count: inTopic(topic.id, items, topics).length,
       }))
       .sort((a, b) => b.count - a.count || a.topic.data.title.localeCompare(b.topic.data.title));
   return build(undefined);

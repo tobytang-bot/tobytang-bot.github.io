@@ -1,0 +1,350 @@
+---
+// Icon preview grid with group filter, size switch and a detail dialog.
+// Icons render through <img> so each SVG stays its own document: the pack's
+// files share element ids, which would collide if inlined together.
+import type { ResourceFile } from "../lib/resources";
+
+interface Props {
+  files: ResourceFile[];
+  groups: { id: string; title: string }[];
+}
+
+const { files, groups } = Astro.props;
+const icons = files.filter((f) => f.file.endsWith(".svg"));
+const sizes = [32, 48, 64, 96];
+const kb = (bytes: number) => `${(bytes / 1024).toFixed(1)} KB`;
+---
+
+<section class="gallery" aria-labelledby="gallery-title" data-gallery>
+  <h2 id="gallery-title" class="visually-hidden">图标预览</h2>
+
+  <div class="toolbar">
+    <div class="segmented" role="group" aria-label="按分组筛选">
+      <button type="button" aria-pressed="true" data-group="">全部 {icons.length}</button>
+      {
+        groups.map((g) => (
+          <button type="button" aria-pressed="false" data-group={g.id}>
+            {g.title} {icons.filter((i) => i.group === g.id).length}
+          </button>
+        ))
+      }
+    </div>
+    <div class="segmented" role="group" aria-label="预览尺寸">
+      {
+        sizes.map((s) => (
+          <button type="button" aria-pressed={s === 64} data-size={String(s)}>
+            {s}
+          </button>
+        ))
+      }
+    </div>
+  </div>
+
+  <ul class="grid" style="--icon-size: 64px">
+    {
+      icons.map((icon) => (
+        <li data-group={icon.group ?? ""}>
+          <button
+            type="button"
+            class="tile"
+            data-icon={icon.name}
+            data-url={icon.url}
+            data-file={icon.file}
+            data-bytes={kb(icon.bytes)}
+            aria-label={`查看 ${icon.name}`}
+          >
+            <span class="stage">
+              <img src={icon.url} alt="" width="128" height="128" loading="lazy" decoding="async" />
+            </span>
+            <span class="name">{icon.name}</span>
+          </button>
+        </li>
+      ))
+    }
+  </ul>
+
+  <dialog class="detail" aria-labelledby="detail-title" data-detail>
+    <div class="detail-stage">
+      <img alt="" width="128" height="128" data-detail-img />
+    </div>
+    <div class="detail-body">
+      <h3 id="detail-title" data-detail-name></h3>
+      <p class="detail-meta" data-detail-meta></p>
+      <div class="actions">
+        <button type="button" data-copy="svg">复制 SVG 代码</button>
+        <button type="button" data-copy="img">复制 &lt;img&gt; 标签</button>
+        <a href={icons[0]?.url} download data-download>下载 SVG</a>
+      </div>
+      <p class="copied" role="status" aria-live="polite" data-copied></p>
+    </div>
+    <button type="button" class="close" aria-label="关闭" data-detail-close>Esc</button>
+  </dialog>
+</section>
+
+<script>
+  for (const gallery of document.querySelectorAll<HTMLElement>("[data-gallery]")) {
+    const grid = gallery.querySelector<HTMLElement>(".grid")!;
+    const items = [...grid.querySelectorAll<HTMLLIElement>("li")];
+
+    const press = (group: NodeListOf<HTMLButtonElement>, active: HTMLButtonElement) => {
+      for (const b of group) b.setAttribute("aria-pressed", String(b === active));
+    };
+
+    const groupButtons = gallery.querySelectorAll<HTMLButtonElement>("[data-group]:is(button)");
+    for (const button of groupButtons) {
+      button.addEventListener("click", () => {
+        press(groupButtons, button);
+        const g = button.dataset.group;
+        for (const li of items) li.hidden = Boolean(g) && li.dataset.group !== g;
+      });
+    }
+
+    const sizeButtons = gallery.querySelectorAll<HTMLButtonElement>("[data-size]");
+    for (const button of sizeButtons) {
+      button.addEventListener("click", () => {
+        press(sizeButtons, button);
+        grid.style.setProperty("--icon-size", `${button.dataset.size}px`);
+      });
+    }
+
+    const dialog = gallery.querySelector<HTMLDialogElement>("[data-detail]")!;
+    const img = dialog.querySelector<HTMLImageElement>("[data-detail-img]")!;
+    const name = dialog.querySelector<HTMLElement>("[data-detail-name]")!;
+    const meta = dialog.querySelector<HTMLElement>("[data-detail-meta]")!;
+    const download = dialog.querySelector<HTMLAnchorElement>("[data-download]")!;
+    const copied = dialog.querySelector<HTMLElement>("[data-copied]")!;
+    let current: DOMStringMap = {};
+
+    for (const tile of gallery.querySelectorAll<HTMLButtonElement>(".tile")) {
+      tile.addEventListener("click", () => {
+        current = tile.dataset;
+        img.src = current.url!;
+        name.textContent = current.icon!;
+        meta.textContent = `${current.file}    128 × 128    ${current.bytes}`;
+        download.href = current.url!;
+        download.setAttribute("download", current.file!);
+        copied.textContent = "";
+        dialog.showModal();
+      });
+    }
+
+    for (const button of dialog.querySelectorAll<HTMLButtonElement>("[data-copy]")) {
+      button.addEventListener("click", async () => {
+        const absolute = new URL(current.url!, location.origin).href;
+        try {
+          const text =
+            button.dataset.copy === "svg"
+              ? await (await fetch(current.url!)).text()
+              : `<img src="${absolute}" width="48" height="48" alt="">`;
+          await navigator.clipboard.writeText(text);
+          copied.textContent = button.dataset.copy === "svg" ? "已复制 SVG 代码" : "已复制 <img> 标签";
+        } catch {
+          copied.textContent = "复制失败，请改用下载";
+        }
+      });
+    }
+
+    dialog.querySelector("[data-detail-close]")!.addEventListener("click", () => dialog.close());
+    dialog.addEventListener("click", (e) => {
+      if (e.target === dialog) dialog.close();
+    });
+  }
+</script>
+
+<style>
+  /* The pack is designed for dark backgrounds, so the stage stays dark in both themes. */
+  .gallery {
+    --stage: #0c0f15;
+    --stage-edge: #232a36;
+    margin: 0 0 3rem;
+  }
+
+  .toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .segmented {
+    display: inline-flex;
+    padding: 2px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+  }
+
+  .segmented button {
+    padding: 0.3rem 0.7rem;
+    border: 0;
+    border-radius: 6px;
+    background: none;
+    color: var(--ink-2);
+    font: inherit;
+    font-size: var(--text-sm);
+    font-variant-numeric: tabular-nums;
+    cursor: pointer;
+  }
+
+  .segmented button[aria-pressed="true"] {
+    background: var(--accent-soft);
+    color: var(--ink);
+    font-weight: 500;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(max(7.5rem, calc(var(--icon-size) + 3rem)), 1fr));
+    gap: 0.75rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .grid li[hidden] {
+    display: none;
+  }
+
+  .tile {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .stage {
+    display: grid;
+    place-items: center;
+    aspect-ratio: 1;
+    border: 1px solid var(--stage-edge);
+    border-radius: var(--radius);
+    background: radial-gradient(120% 90% at 30% 20%, #1a2030, var(--stage));
+  }
+
+  .stage img {
+    width: var(--icon-size);
+    height: var(--icon-size);
+  }
+
+  .tile:hover .stage {
+    border-color: #4a5570;
+  }
+
+  .name {
+    overflow: hidden;
+    color: var(--ink-2);
+    font-size: var(--text-xs);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Detail dialog */
+  .detail {
+    width: min(40rem, calc(100vw - 2rem));
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface);
+    color: var(--ink);
+    box-shadow: 0 24px 60px -12px rgb(0 0 0 / 0.35);
+  }
+
+  .detail[open] {
+    display: grid;
+    grid-template-columns: 14rem minmax(0, 1fr);
+  }
+
+  .detail::backdrop {
+    background: rgb(10 12 16 / 0.45);
+  }
+
+  .detail-stage {
+    display: grid;
+    place-items: center;
+    min-height: 14rem;
+    background: radial-gradient(120% 90% at 30% 20%, #1a2030, var(--stage));
+  }
+
+  .detail-stage img {
+    width: 128px;
+    height: 128px;
+  }
+
+  .detail-body {
+    padding: 1.25rem 1.25rem 1rem;
+  }
+
+  h3 {
+    margin: 0 0 0.25rem;
+    font-size: var(--text-lg);
+    font-weight: 600;
+  }
+
+  .detail-meta {
+    margin: 0 0 1.25rem;
+    color: var(--ink-3);
+    font-size: var(--text-sm);
+    white-space: pre;
+  }
+
+  .actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .actions :is(button, a) {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: none;
+    color: var(--ink);
+    font: inherit;
+    font-size: var(--text-sm);
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  .actions :is(button, a):hover {
+    border-color: var(--ink-3);
+  }
+
+  .copied {
+    min-height: 1.4em;
+    margin: 0.6rem 0 0;
+    color: var(--status-solved);
+    font-size: var(--text-sm);
+  }
+
+  .close {
+    position: absolute;
+    top: 0.6rem;
+    right: 0.6rem;
+    padding: 0.1rem 0.4rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    color: var(--ink-3);
+    font: inherit;
+    font-size: var(--text-xs);
+    cursor: pointer;
+  }
+
+  @media (max-width: 560px) {
+    .detail[open] {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .detail-stage {
+      min-height: 11rem;
+    }
+  }
+</style>

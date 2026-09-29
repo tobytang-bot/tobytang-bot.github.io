@@ -49,4 +49,30 @@ const knowledge = defineCollection({
   schema: article,
 });
 
-export const collections = { topics, projects, worklog, knowledge };
+// Shared resources: icon packs, tools, templates, snippets.
+// Files: resources/<id>.md; downloadable files live in public/downloads/<assets>/.
+const resources = defineCollection({
+  loader: glob({ pattern: "*.{md,mdx}", base: "./src/content/resources" }),
+  schema: z.object({
+    title: z.string().min(1),
+    description: z.string().min(1),
+    date: z.coerce.date(),
+    updated: z.coerce.date().optional(),
+    kind: z.enum(["icon-pack", "tool", "template", "snippet"]),
+    topics: z.array(reference("topics")).default([]),
+    tags: z.array(z.string()).default([]),
+    license: z.string().min(1),
+    /** Who made it, e.g. "ChatGPT 生成" or an author name. */
+    source: z.string().min(1),
+    version: z.string().optional(),
+    /** Folder under public/downloads/ with the downloadable files. */
+    assets: z.string().regex(/^[a-z0-9-]+$/).optional(),
+    /** Groups files by filename prefix, e.g. arrow-*, circle-arrow-*. */
+    groups: z
+      .array(z.object({ id: z.string(), title: z.string(), prefix: z.string() }))
+      .default([]),
+    draft: z.boolean().default(false),
+  }),
+});
+
+export const collections = { topics, projects, worklog, knowledge, resources };

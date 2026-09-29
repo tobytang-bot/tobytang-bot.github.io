@@ -1,0 +1,120 @@
+---
+import ListLayout from "../../layouts/ListLayout.astro";
+import { isoDate } from "../../lib/content";
+import { getResources, KIND_LABEL, resourceFiles, resourceUrl } from "../../lib/resources";
+
+const resources = await getResources();
+const kinds = [...new Set(resources.map((r) => r.data.kind))];
+---
+
+<ListLayout title="Resources" description="可以直接拿去用的资源：图标、工具、模板和代码片段。">
+  {
+    resources.length === 0 ? (
+      <p class="empty">还没有分享的资源。</p>
+    ) : (
+      kinds.map((kind) => (
+        <section>
+          <h2>{KIND_LABEL[kind]}</h2>
+          <ul class="resources">
+            {resources
+              .filter((r) => r.data.kind === kind)
+              .map((r) => {
+                const files = resourceFiles(r);
+                const preview = files.filter((f) => f.file.endsWith(".svg")).slice(0, 6);
+                return (
+                  <li>
+                    {preview.length > 0 && (
+                      <a class="preview" href={resourceUrl(r)} tabindex="-1" aria-hidden="true">
+                        {preview.map((f) => (
+                          <img src={f.url} alt="" width="40" height="40" loading="lazy" />
+                        ))}
+                      </a>
+                    )}
+                    <div class="body">
+                      <a class="title" href={resourceUrl(r)}>
+                        {r.data.title}
+                      </a>
+                      <p>{r.data.description}</p>
+                      <div class="row">
+                        <span>{files.length} 个文件</span>
+                        <span>{r.data.license}</span>
+                        <time datetime={isoDate(r.data.updated ?? r.data.date)}>
+                          {isoDate(r.data.updated ?? r.data.date)}
+                        </time>
+                      </div>
+                    </div>
+                  </li>
+                );
+              })}
+          </ul>
+        </section>
+      ))
+    )
+  }
+</ListLayout>
+
+<style>
+  .resources {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border-top: 1px solid var(--border);
+  }
+
+  li {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 1.25rem;
+    align-items: center;
+    padding: 1.1rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* Icon strip on a dark stage: the packs are made for dark backgrounds. */
+  .preview {
+    display: grid;
+    grid-template-columns: repeat(3, 40px);
+    gap: 4px;
+    padding: 8px;
+    border: 1px solid #232a36;
+    border-radius: var(--radius);
+    background: radial-gradient(120% 90% at 30% 20%, #1a2030, #0c0f15);
+  }
+
+  .title {
+    font-size: var(--text-lg);
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .title:hover {
+    color: var(--accent);
+  }
+
+  p {
+    margin: 0.3rem 0 0.5rem;
+    color: var(--ink-2);
+    line-height: 1.6;
+  }
+
+  .row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1.25rem;
+    color: var(--ink-3);
+    font-size: var(--text-sm);
+  }
+
+  .empty {
+    color: var(--ink-3);
+  }
+
+  @media (max-width: 560px) {
+    li {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .preview {
+      justify-self: start;
+    }
+  }
+</style>

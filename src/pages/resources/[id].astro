@@ -1,0 +1,230 @@
+---
+import "../../styles/prose.css";
+import type { GetStaticPaths } from "astro";
+import { getEntries, render } from "astro:content";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import IconGallery from "../../components/IconGallery.astro";
+import ProseEnhance from "../../components/ProseEnhance.astro";
+import { isoDate } from "../../lib/content";
+import {
+  getResources,
+  KIND_LABEL,
+  resourceFiles,
+  resourceUrl,
+  zipUrl,
+  type Resource,
+} from "../../lib/resources";
+import { ancestry, getTopics, topicUrl } from "../../lib/topics";
+import { SITE } from "../../site";
+
+export const getStaticPaths = (async () =>
+  (await getResources()).map((resource) => ({
+    params: { id: resource.id },
+    props: { resource },
+  }))) satisfies GetStaticPaths;
+
+const { resource } = Astro.props as { resource: Resource };
+const { title, description, date, updated, kind, license, source, version, assets, groups, tags } =
+  resource.data;
+const { Content } = await render(resource);
+const files = resourceFiles(resource);
+const topics = await getEntries(resource.data.topics);
+const topicMap = await getTopics();
+const totalKb = (files.reduce((n, f) => n + f.bytes, 0) / 1024).toFixed(0);
+
+// Search: resources get their own type; file names are indexed as keywords.
+const filterTopics = [
+  ...new Set(topics.flatMap((t) => ancestry(t.id, topicMap).map((a) => a.data.title))),
+];
+const filters = ["type:Resource", ...filterTopics.map((t) => `topic:${t}`)];
+const searchMeta = [`date:${isoDate(date)}`, "type:Resource"];
+
+const url = new URL(resourceUrl(resource), Astro.site).href;
+const structuredData = [
+  {
+    "@type": "CreativeWork",
+    name: title,
+    description,
+    url,
+    datePublished: isoDate(date),
+    dateModified: isoDate(updated ?? date),
+    inLanguage: SITE.lang,
+    license,
+    keywords: [...topics.map((t) => t.data.title), ...tags].join(", "),
+    creditText: source,
+    ...(version && { version }),
+    ...(assets && { encoding: { "@type": "MediaObject", contentUrl: new URL(zipUrl(assets), Astro.site).href, encodingFormat: "application/zip" } }),
+  },
+  {
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { name: SITE.title, item: new URL("/", Astro.site).href },
+      { name: "Resources", item: new URL("/resources/", Astro.site).href },
+      { name: title, item: url },
+    ].map((c, i) => ({ "@type": "ListItem", position: i + 1, ...c })),
+  },
+];
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  article={{ published: date, modified: updated, section: "Resources", tags }}
+  structuredData={structuredData}
+>
+  <article class="resource" data-pagefind-body>
+    <div hidden>
+      {filters.map((f) => <span data-pagefind-filter={f} />)}
+      {searchMeta.map((m) => <span data-pagefind-meta={m} />)}
+      <p>{files.map((f) => f.name).join(" ")}</p>
+    </div>
+
+    <nav class="crumbs" aria-label="路径" data-pagefind-ignore>
+      <a href="/resources/">Resources</a>
+    </nav>
+
+    <header class="resource-header">
+      <h1 data-pagefind-meta="title">{title}</h1>
+      <p class="description">{description}</p>
+      <dl class="meta" data-pagefind-ignore>
+        <div><dt>类型</dt><dd>{KIND_LABEL[kind]}</dd></div>
+        <div><dt>授权</dt><dd>{license}</dd></div>
+        <div><dt>来源</dt><dd>{source}</dd></div>
+        {version && <div><dt>版本</dt><dd>{version}</dd></div>}
+        <div>
+          <dt>更新</dt>
+          <dd><time datetime={isoDate(updated ?? date)}>{isoDate(updated ?? date)}</time></dd>
+        </div>
+        {files.length > 0 && <div><dt>文件</dt><dd>{files.length} 个，共 {totalKb} KB</dd></div>}
+      </dl>
+      {
+        topics.length > 0 && (
+          <ul class="chips" aria-label="主题">
+            {topics.map((t) => (
+              <li>
+                <a href={topicUrl(t.id)}>{t.data.title}</a>
+              </li>
+            ))}
+          </ul>
+        )
+      }
+      {
+        assets && (
+          <a class="download" href={zipUrl(assets)} download data-pagefind-ignore>
+            下载全部（.zip）
+          </a>
+        )
+      }
+    </header>
+
+    {kind === "icon-pack" && files.length > 0 && <div data-pagefind-ignore><IconGallery files={files} groups={groups} /></div>}
+
+    <div class="prose">
+      <Content />
+    </div>
+  </article>
+  <ProseEnhance />
+</BaseLayout>
+
+<style>
+  .resource {
+    max-width: 52rem;
+  }
+
+  .crumbs {
+    margin-bottom: 0.75rem;
+    font-size: var(--text-sm);
+  }
+
+  .crumbs a {
+    color: var(--ink-3);
+    text-decoration: none;
+  }
+
+  .crumbs a:hover {
+    color: var(--ink);
+  }
+
+  .resource-header {
+    margin-bottom: 2.5rem;
+  }
+
+  h1 {
+    margin: 0 0 0.6rem;
+    font-size: var(--text-3xl);
+    font-weight: 650;
+    line-height: 1.25;
+    letter-spacing: -0.02em;
+  }
+
+  .description {
+    margin: 0 0 1.5rem;
+    color: var(--ink-2);
+    font-size: var(--text-lg);
+    line-height: 1.6;
+  }
+
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.9rem 2rem;
+    margin: 0 0 1rem;
+    font-size: var(--text-sm);
+  }
+
+  dt {
+    margin-bottom: 0.15rem;
+    color: var(--ink-3);
+    font-size: var(--text-xs);
+  }
+
+  dd {
+    margin: 0;
+  }
+
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin: 0 0 1.5rem;
+    padding: 0;
+    list-style: none;
+    font-size: var(--text-sm);
+  }
+
+  .chips a {
+    display: block;
+    padding: 0.05rem 0.55rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--ink-2);
+    text-decoration: none;
+  }
+
+  .chips a:hover {
+    border-color: var(--ink-3);
+    color: var(--ink);
+  }
+
+  .download {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.55rem 1rem;
+    border-radius: var(--radius);
+    background: var(--ink);
+    color: var(--bg);
+    font-weight: 500;
+    text-decoration: none;
+  }
+
+  .download:hover {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  @media (max-width: 860px) {
+    h1 {
+      font-size: var(--text-2xl);
+    }
+  }
+</style>

@@ -2,14 +2,15 @@
 import ListLayout from "../../layouts/ListLayout.astro";
 import TopicTree from "../../components/TopicTree.astro";
 import { getArticles } from "../../lib/content";
+import { getResources } from "../../lib/resources";
 import { getTopics, topicTree } from "../../lib/topics";
 
-const tree = topicTree(await getArticles(), await getTopics());
+const tree = topicTree([...(await getArticles()), ...(await getResources())], await getTopics());
 ---
 
 <ListLayout
   title="Topics"
-  description="按技术主题浏览。父主题包含子主题下的全部文章，数字为篇数。"
+  description="按技术主题浏览。父主题包含子主题下的全部内容，数字为文章和资源的数量。"
 >
   <TopicTree nodes={tree} />
 </ListLayout>

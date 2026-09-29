@@ -1,0 +1,59 @@
+<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+
+  <defs>
+    <radialGradient id="glassFill" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse"
+      gradientTransform="translate(44 34) rotate(48) scale(96)">
+      <stop offset="0" stop-color="#3C4352" stop-opacity="0.92"/>
+      <stop offset="0.48" stop-color="#151922" stop-opacity="0.96"/>
+      <stop offset="1" stop-color="#05070C" stop-opacity="1"/>
+    </radialGradient>
+
+    <linearGradient id="rim" x1="20" y1="18" x2="111" y2="109" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF" stop-opacity="0.8"/>
+      <stop offset="0.22" stop-color="#71B7FF"/>
+      <stop offset="0.52" stop-color="#916BFF"/>
+      <stop offset="0.78" stop-color="#FF71DC"/>
+      <stop offset="1" stop-color="#56C9FF"/>
+    </linearGradient>
+
+    <linearGradient id="arrowFill" x1="39" y1="40" x2="91" y2="88" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F7FAFF"/>
+      <stop offset="0.35" stop-color="#DCE5F7"/>
+      <stop offset="1" stop-color="#8996B8"/>
+    </linearGradient>
+
+    <filter id="outerGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <filter id="softShadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="8" stdDeviation="9" flood-color="#000000" flood-opacity="0.55"/>
+    </filter>
+
+    <filter id="arrowGlow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="2.2" result="glow"/>
+      <feMerge>
+        <feMergeNode in="glow"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+
+  <rect x="18" y="18" width="92" height="92" rx="24" fill="url(#glassFill)" filter="url(#softShadow)"/>
+  <rect x="19" y="19" width="90" height="90" rx="23" stroke="url(#rim)" stroke-width="2"/>
+  <rect x="24" y="24" width="80" height="80" rx="20" stroke="#FFFFFF" stroke-opacity="0.10"/>
+  <path d="M33 42C40 27 53 20 69 20C83 20 95 25 102 35"
+        stroke="white" stroke-opacity="0.18" stroke-width="3" stroke-linecap="round"/>
+  <path d="M78 44L54 64L78 84"
+        stroke="url(#arrowFill)"
+        stroke-width="9"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        filter="url(#arrowGlow)"/>
+
+</svg>

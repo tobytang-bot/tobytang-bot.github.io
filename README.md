@@ -19,6 +19,8 @@ npm run preview  # serve dist/ (search works here, not in `npm run dev`)
 | `src/content/topics.yaml` | Topic tree (`parent` for hierarchy) |
 | `src/content/projects/<id>.yaml` | Projects referenced by `project:` |
 | `templates/worklog.md` | Template for new worklogs (human or AI generated) |
+| `src/content/resources/<id>.md` | Shared resource (icon pack, tool, template, snippet) → `/resources/<id>/` |
+| `public/downloads/<assets>/` | Files of a resource, served as-is at `/downloads/<assets>/…`; zipped at build to `/downloads/<assets>.zip` |
 
 Frontmatter is validated by `src/content.config.ts`; an unknown topic/project, an invalid `status`,
 or a worklog filename date that differs from `date` fails the build.

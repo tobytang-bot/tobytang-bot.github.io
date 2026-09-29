@@ -4,19 +4,21 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 import ArticleList from "../components/ArticleList.astro";
 import { articleUrl, getArticles, isoDate, lastModified } from "../lib/content";
 import { STATUS_LABEL } from "../lib/status";
-import { articlesInTopic, getTopics, topicUrl } from "../lib/topics";
+import { getResources } from "../lib/resources";
+import { getTopics, inTopic, topicUrl } from "../lib/topics";
 import { SITE } from "../site";
 
-const [articles, topics, projects] = await Promise.all([
+const [articles, topics, projects, resources] = await Promise.all([
   getArticles(),
   getTopics(),
   getCollection("projects"),
+  getResources(),
 ]);
 const knowledge = articles.filter((a) => a.collection === "knowledge");
 const investigating = articles.filter((a) => a.data.status === "investigating");
 
 const title = (id: string) => topics.get(id)?.data.title ?? id;
-const countIn = (id: string) => articlesInTopic(id, articles, topics).length;
+const countIn = (id: string) => inTopic(id, articles, topics).length;
 
 const stats = [
   { label: "全部文章", value: String(articles.length), url: "/archive/" },
@@ -24,6 +26,7 @@ const stats = [
     const n = countIn(id);
     return { label: title(id), value: String(n), url: n > 0 ? topicUrl(id) : undefined };
   }),
+  { label: "资源", value: String(resources.length), url: "/resources/" },
   {
     label: "最近更新",
     value: articles[0] ? isoDate(lastModified(articles[0])) : "—",
