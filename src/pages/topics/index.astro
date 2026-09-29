@@ -1,0 +1,15 @@
+---
+import ListLayout from "../../layouts/ListLayout.astro";
+import TopicTree from "../../components/TopicTree.astro";
+import { getArticles } from "../../lib/content";
+import { getTopics, topicTree } from "../../lib/topics";
+
+const tree = topicTree(await getArticles(), await getTopics());
+---
+
+<ListLayout
+  title="Topics"
+  description="按技术主题浏览。父主题包含子主题下的全部文章，数字为篇数。"
+>
+  <TopicTree nodes={tree} />
+</ListLayout>

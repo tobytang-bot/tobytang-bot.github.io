@@ -1,0 +1,72 @@
+---
+import type { GetStaticPaths } from "astro";
+import { getCollection, getEntries, type CollectionEntry } from "astro:content";
+import ListLayout from "../../layouts/ListLayout.astro";
+import ArticleList from "../../components/ArticleList.astro";
+import { getArticles } from "../../lib/content";
+import { topicUrl } from "../../lib/topics";
+
+export const getStaticPaths = (async () => {
+  const projects = await getCollection("projects");
+  return projects.map((project) => ({ params: { id: project.id }, props: { project } }));
+}) satisfies GetStaticPaths;
+
+const { project } = Astro.props as { project: CollectionEntry<"projects"> };
+const entries = (await getArticles()).filter((a) => a.data.project?.id === project.id);
+const worklogs = entries.filter((e) => e.collection === "worklog");
+const knowledge = entries.filter((e) => e.collection === "knowledge");
+const topics = await getEntries(project.data.topics);
+---
+
+<ListLayout
+  title={project.data.title}
+  description={project.data.description}
+  crumbs={[{ title: "Projects", url: "/projects/" }]}
+>
+  {
+    topics.length > 0 && (
+      <ul class="chips" aria-label="主题">
+        {topics.map((t) => (
+          <li>
+            <a href={topicUrl(t.id)}>{t.data.title}</a>
+          </li>
+        ))}
+      </ul>
+    )
+  }
+
+  <section>
+    <h2>Worklog</h2>
+    <ArticleList entries={worklogs} date="date" showCollection={false} empty="这个项目还没有 Worklog。" />
+  </section>
+  <section>
+    <h2>Knowledge</h2>
+    <ArticleList entries={knowledge} showCollection={false} empty="这个项目还没有 Knowledge 文章。" />
+  </section>
+</ListLayout>
+
+<style>
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin: -1.25rem 0 2.5rem;
+    padding: 0;
+    list-style: none;
+    font-size: var(--text-sm);
+  }
+
+  .chips a {
+    display: block;
+    padding: 0.05rem 0.55rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--ink-2);
+    text-decoration: none;
+  }
+
+  .chips a:hover {
+    border-color: var(--ink-3);
+    color: var(--ink);
+  }
+</style>

@@ -1,0 +1,69 @@
+---
+import type { TopicNode } from "../lib/topics";
+import { topicUrl } from "../lib/topics";
+
+interface Props {
+  nodes: TopicNode[];
+}
+
+const { nodes } = Astro.props;
+---
+
+<ul class="tree">
+  {
+    nodes.map((node) => (
+      <li>
+        <div class="node">
+          {node.count > 0 ? (
+            <a href={topicUrl(node.topic.id)}>{node.topic.data.title}</a>
+          ) : (
+            <span class="idle">{node.topic.data.title}</span>
+          )}
+          <span class="count">{node.count}</span>
+        </div>
+        {node.children.length > 0 && <Astro.self nodes={node.children} />}
+      </li>
+    ))
+  }
+</ul>
+
+<style>
+  .tree {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .tree .tree {
+    margin-left: 0.4rem;
+    padding-left: 1rem;
+    border-left: 1px solid var(--border);
+  }
+
+  .node {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.35rem 0;
+  }
+
+  a {
+    text-decoration: none;
+    font-weight: 500;
+  }
+
+  a:hover {
+    color: var(--accent);
+  }
+
+  .idle {
+    color: var(--ink-3);
+  }
+
+  .count {
+    color: var(--ink-3);
+    font-size: var(--text-sm);
+    font-variant-numeric: tabular-nums;
+  }
+</style>

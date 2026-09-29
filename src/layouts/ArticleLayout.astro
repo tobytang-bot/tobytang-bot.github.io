@@ -2,11 +2,13 @@
 import "../styles/prose.css";
 import { getEntries, getEntry, render } from "astro:content";
 import BaseLayout from "./BaseLayout.astro";
+import ArticleFooter from "../components/ArticleFooter.astro";
 import ProseEnhance from "../components/ProseEnhance.astro";
 import StatusBadge from "../components/StatusBadge.astro";
 import Toc from "../components/Toc.astro";
 import { isoDate, type Article } from "../lib/content";
 import { COLLECTION_LABEL } from "../lib/status";
+import { topicUrl } from "../lib/topics";
 
 interface Props {
   entry: Article;
@@ -49,7 +51,7 @@ const project = entry.data.project && (await getEntry(entry.data.project));
           project && (
             <div>
               <dt>项目</dt>
-              <dd>{project.data.title}</dd>
+              <dd><a href={`/projects/${project.id}/`}>{project.data.title}</a></dd>
             </div>
           )
         }
@@ -57,7 +59,11 @@ const project = entry.data.project && (await getEntry(entry.data.project));
           <dt>主题</dt>
           <dd>
             <ul class="chips">
-              {topics.map((t) => <li>{t.data.title}</li>)}
+              {topics.map((t) => (
+                <li>
+                  <a href={topicUrl(t.id)}>{t.data.title}</a>
+                </li>
+              ))}
               {tags.map((tag) => <li class="tag">{tag}</li>)}
             </ul>
           </dd>
@@ -70,6 +76,8 @@ const project = entry.data.project && (await getEntry(entry.data.project));
     <div class="prose">
       <Content />
     </div>
+
+    <ArticleFooter entry={entry} />
   </article>
 
   <Toc slot="aside" headings={headings} variant="aside" />
@@ -138,10 +146,33 @@ const project = entry.data.project && (await getEntry(entry.data.project));
   }
 
   .chips li {
-    padding: 0.05rem 0.55rem;
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
     color: var(--ink-2);
+  }
+
+  .chips li.tag,
+  .chips a {
+    display: block;
+    padding: 0.05rem 0.55rem;
+  }
+
+  .chips a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .chips li:has(a:hover) {
+    border-color: var(--ink-3);
+    color: var(--ink);
+  }
+
+  dd > a {
+    text-decoration: none;
+  }
+
+  dd > a:hover {
+    color: var(--accent);
   }
 
   .chips .tag {

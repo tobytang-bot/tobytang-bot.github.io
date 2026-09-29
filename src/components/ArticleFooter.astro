@@ -1,0 +1,151 @@
+---
+import { articleUrl, getArticles, neighbours, related, type Article } from "../lib/content";
+import { COLLECTION_LABEL } from "../lib/status";
+
+interface Props {
+  entry: Article;
+}
+
+const { entry } = Astro.props;
+const all = await getArticles();
+const { older, newer } = neighbours(entry, all);
+const relatedEntries = related(entry, all);
+const kind = COLLECTION_LABEL[entry.collection];
+---
+
+<footer class="article-footer">
+  {
+    relatedEntries.length > 0 && (
+      <section aria-labelledby="related-title">
+        <h2 id="related-title">相关文章</h2>
+        <ul class="related">
+          {relatedEntries.map((a) => (
+            <li data-status={a.data.status}>
+              <a href={articleUrl(a)}>{a.data.title}</a>
+              <span>{COLLECTION_LABEL[a.collection]}</span>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )
+  }
+
+  {
+    (older || newer) && (
+      <nav class="pager" aria-label={`上一篇 / 下一篇 ${kind}`}>
+        {older ? (
+          <a class="prev" href={articleUrl(older)} rel="prev">
+            <span class="dir">上一篇（更早）</span>
+            <span class="title">{older.data.title}</span>
+          </a>
+        ) : (
+          <span />
+        )}
+        {newer && (
+          <a class="next" href={articleUrl(newer)} rel="next">
+            <span class="dir">下一篇（更新）</span>
+            <span class="title">{newer.data.title}</span>
+          </a>
+        )}
+      </nav>
+    )
+  }
+</footer>
+
+<style>
+  .article-footer {
+    margin-top: 4rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--border);
+  }
+
+  h2 {
+    margin: 0 0 0.75rem;
+    font-size: var(--text-base);
+    font-weight: 600;
+  }
+
+  .related {
+    margin: 0 0 2.5rem;
+    padding: 0;
+    list-style: none;
+  }
+
+  .related li {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    padding: 0.35rem 0;
+  }
+
+  .related li::before {
+    content: "";
+    flex: none;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--status-color);
+    transform: translateY(-0.15em);
+  }
+
+  .related a {
+    text-decoration: none;
+    font-weight: 500;
+  }
+
+  .related a:hover {
+    color: var(--accent);
+  }
+
+  .related span {
+    color: var(--ink-3);
+    font-size: var(--text-sm);
+  }
+
+  .pager {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+
+  .pager a {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0.9rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    text-decoration: none;
+  }
+
+  .pager a:hover {
+    border-color: var(--ink-3);
+  }
+
+  .next {
+    grid-column: 2;
+    text-align: right;
+  }
+
+  .dir {
+    color: var(--ink-3);
+    font-size: var(--text-sm);
+  }
+
+  .title {
+    font-weight: 500;
+    line-height: 1.45;
+  }
+
+  @media (max-width: 560px) {
+    .pager {
+      grid-template-columns: 1fr;
+    }
+    .next {
+      grid-column: 1;
+    }
+    .pager > span:empty {
+      display: none;
+    }
+  }
+</style>

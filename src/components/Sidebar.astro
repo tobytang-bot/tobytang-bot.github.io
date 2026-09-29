@@ -4,10 +4,32 @@ import { STATUS_LABEL } from "../lib/status";
 
 const sections = await getNav();
 const here = Astro.url.pathname;
+
+const browse = [
+  { title: "Worklog", url: "/worklog/" },
+  { title: "Knowledge", url: "/knowledge/" },
+  { title: "Projects", url: "/projects/" },
+  { title: "Topics", url: "/topics/" },
+  { title: "Archive", url: "/archive/" },
+];
 ---
 
 <div class="nav-backdrop" data-nav-backdrop hidden></div>
 <nav class="sidebar" id="site-nav" aria-label="站点导航">
+  <ul class="browse">
+    {
+      browse.map((b) => (
+        <li>
+          <a
+            href={b.url}
+            aria-current={here === b.url ? "page" : here.startsWith(b.url) ? "true" : undefined}
+          >
+            {b.title}
+          </a>
+        </li>
+      ))
+    }
+  </ul>
   {
     sections.map((section) => (
       <section class="section">
@@ -75,6 +97,20 @@ const here = Astro.url.pathname;
     padding: 1.5rem 1rem 3rem 1.25rem;
     border-right: 1px solid var(--border);
     font-size: var(--text-sm);
+  }
+
+  .browse {
+    margin: 0 0 1.5rem;
+    padding: 0 0 1.25rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .browse a {
+    font-weight: 500;
+  }
+
+  .browse a[aria-current="true"] {
+    color: var(--ink);
   }
 
   .section + .section {

@@ -1,0 +1,53 @@
+---
+import type { GetStaticPaths } from "astro";
+import ListLayout from "../../layouts/ListLayout.astro";
+import ArticleList from "../../components/ArticleList.astro";
+import TopicTree from "../../components/TopicTree.astro";
+import { getArticles } from "../../lib/content";
+import {
+  ancestry,
+  articlesInTopic,
+  findNode,
+  getTopics,
+  topicTree,
+  topicUrl,
+  type Topic,
+} from "../../lib/topics";
+
+// Only topics with at least one article (directly or via a subtopic) get a page.
+export const getStaticPaths = (async () => {
+  const [articles, topics] = await Promise.all([getArticles(), getTopics()]);
+  return [...topics.values()]
+    .filter((t) => articlesInTopic(t.id, articles, topics).length > 0)
+    .map((topic) => ({ params: { id: topic.id }, props: { topic } }));
+}) satisfies GetStaticPaths;
+
+const { topic } = Astro.props as { topic: Topic };
+const [articles, topics] = await Promise.all([getArticles(), getTopics()]);
+const entries = articlesInTopic(topic.id, articles, topics);
+const parents = ancestry(topic.id, topics).slice(0, -1);
+const subtopics = findNode(topicTree(articles, topics), topic.id)?.children ?? [];
+const count = entries.length;
+---
+
+<ListLayout
+  title={topic.data.title}
+  description={`${count} 篇与 ${topic.data.title} 相关的 Worklog 和 Knowledge。`}
+  crumbs={[
+    { title: "Topics", url: "/topics/" },
+    ...parents.map((p) => ({ title: p.data.title, url: topicUrl(p.id) })),
+  ]}
+>
+  {
+    subtopics.length > 0 && (
+      <section>
+        <h2>子主题</h2>
+        <TopicTree nodes={subtopics} />
+      </section>
+    )
+  }
+  <section>
+    <h2>文章</h2>
+    <ArticleList entries={entries} />
+  </section>
+</ListLayout>

@@ -1,0 +1,43 @@
+---
+import ListLayout from "../../layouts/ListLayout.astro";
+import ArticleList from "../../components/ArticleList.astro";
+import { getKnowledge } from "../../lib/content";
+import { getTopics, topicUrl } from "../../lib/topics";
+
+const [knowledge, topics] = await Promise.all([getKnowledge(), getTopics()]);
+
+// Knowledge files live in knowledge/<topic>/…, so the folder is the primary topic.
+const groups = [...new Set(knowledge.map((k) => k.id.split("/")[0]))]
+  .map((id) => ({
+    id,
+    title: topics.get(id)?.data.title ?? id,
+    entries: knowledge.filter((k) => k.id.split("/")[0] === id),
+  }))
+  .sort((a, b) => a.title.localeCompare(b.title, "zh-CN"));
+---
+
+<ListLayout title="Knowledge" description="长期有效的知识整理：教程、最佳实践和技术总结。">
+  {
+    groups.length === 0 ? (
+      <ArticleList entries={[]} empty="还没有 Knowledge 文章。" />
+    ) : (
+      groups.map((group) => (
+        <section>
+          <h2>
+            {topics.has(group.id) ? <a href={topicUrl(group.id)}>{group.title}</a> : group.title}
+          </h2>
+          <ArticleList entries={group.entries} showCollection={false} />
+        </section>
+      ))
+    )
+  }
+</ListLayout>
+
+<style>
+  h2 a {
+    text-decoration: none;
+  }
+  h2 a:hover {
+    color: var(--accent);
+  }
+</style>

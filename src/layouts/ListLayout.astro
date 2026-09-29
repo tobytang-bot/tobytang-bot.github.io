@@ -1,0 +1,97 @@
+---
+import BaseLayout from "./BaseLayout.astro";
+
+interface Crumb {
+  title: string;
+  url: string;
+}
+
+interface Props {
+  title: string;
+  description: string;
+  /** Parent pages, root first. The current page is not included. */
+  crumbs?: Crumb[];
+}
+
+const { title, description, crumbs = [] } = Astro.props;
+---
+
+<BaseLayout title={title} description={description}>
+  <div class="page">
+    {
+      crumbs.length > 0 && (
+        <nav class="crumbs" aria-label="路径">
+          <ol>
+            {crumbs.map((c) => (
+              <li>
+                <a href={c.url}>{c.title}</a>
+              </li>
+            ))}
+          </ol>
+        </nav>
+      )
+    }
+    <h1>{title}</h1>
+    <p class="lede">{description}</p>
+    <slot />
+  </div>
+</BaseLayout>
+
+<style>
+  .page {
+    max-width: var(--measure);
+  }
+
+  .crumbs ol {
+    display: flex;
+    flex-wrap: wrap;
+    margin: 0 0 0.75rem;
+    padding: 0;
+    list-style: none;
+    font-size: var(--text-sm);
+  }
+
+  .crumbs li + li::before {
+    content: "/";
+    margin: 0 0.5rem;
+    color: var(--ink-3);
+  }
+
+  .crumbs a {
+    color: var(--ink-3);
+    text-decoration: none;
+  }
+
+  .crumbs a:hover {
+    color: var(--ink);
+  }
+
+  h1 {
+    margin: 0 0 0.5rem;
+    font-size: var(--text-3xl);
+    font-weight: 650;
+    line-height: 1.25;
+    letter-spacing: -0.02em;
+  }
+
+  .lede {
+    margin: 0 0 2.5rem;
+    color: var(--ink-2);
+    font-size: var(--text-lg);
+    line-height: 1.6;
+  }
+
+  /* Section headings inside list pages */
+  .page :global(h2) {
+    margin: 2.5rem 0 0.75rem;
+    font-size: var(--text-base);
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  @media (max-width: 860px) {
+    h1 {
+      font-size: var(--text-2xl);
+    }
+  }
+</style>

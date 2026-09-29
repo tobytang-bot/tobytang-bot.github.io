@@ -1,0 +1,27 @@
+---
+import ListLayout from "../../layouts/ListLayout.astro";
+import ArticleList from "../../components/ArticleList.astro";
+import { getWorklogs } from "../../lib/content";
+
+const worklogs = await getWorklogs();
+const years = [...new Set(worklogs.map((w) => w.data.date.getUTCFullYear()))];
+---
+
+<ListLayout title="Worklog" description="每天具体做了什么：调查过程、Debug 记录和解决方案。">
+  {
+    years.length === 0 ? (
+      <ArticleList entries={[]} empty="还没有 Worklog。" />
+    ) : (
+      years.map((year) => (
+        <section>
+          <h2>{year}</h2>
+          <ArticleList
+            entries={worklogs.filter((w) => w.data.date.getUTCFullYear() === year)}
+            date="date"
+            showCollection={false}
+          />
+        </section>
+      ))
+    )
+  }
+</ListLayout>

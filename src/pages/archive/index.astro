@@ -1,0 +1,128 @@
+---
+import ListLayout from "../../layouts/ListLayout.astro";
+import { articleUrl, getWorklogs, isoDate, type Worklog } from "../../lib/content";
+
+const worklogs = await getWorklogs();
+
+// year → month → entries, newest first (getWorklogs is already sorted by date desc).
+const years = new Map<number, Map<number, Worklog[]>>();
+for (const w of worklogs) {
+  const y = w.data.date.getUTCFullYear();
+  const m = w.data.date.getUTCMonth() + 1;
+  const months = years.get(y) ?? new Map<number, Worklog[]>();
+  months.set(m, [...(months.get(m) ?? []), w]);
+  years.set(y, months);
+}
+---
+
+<ListLayout title="Archive" description="按年、月、日查看全部 Worklog。">
+  {
+    years.size === 0 ? (
+      <p class="empty">还没有 Worklog。</p>
+    ) : (
+      [...years].map(([year, months]) => (
+        <section class="year">
+          <h2>
+            {year}
+            <span class="count">{[...months.values()].flat().length} 篇</span>
+          </h2>
+          {[...months].map(([month, entries]) => (
+            <section class="month" aria-label={`${year} 年 ${month} 月`}>
+              <h3>{month} 月</h3>
+              <ol>
+                {entries.map((w) => (
+                  <li data-status={w.data.status}>
+                    <time datetime={isoDate(w.data.date)}>{w.data.date.getUTCDate()}</time>
+                    <a href={articleUrl(w)}>{w.data.title}</a>
+                  </li>
+                ))}
+              </ol>
+            </section>
+          ))}
+        </section>
+      ))
+    )
+  }
+</ListLayout>
+
+<style>
+  .year + .year {
+    margin-top: 2.5rem;
+  }
+
+  .year > h2 {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+    font-size: var(--text-xl);
+  }
+
+  .count {
+    color: var(--ink-3);
+    font-size: var(--text-sm);
+    font-weight: 400;
+  }
+
+  .month {
+    display: grid;
+    grid-template-columns: 4rem minmax(0, 1fr);
+    gap: 0 1rem;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  h3 {
+    margin: 0.15rem 0 0;
+    color: var(--ink-3);
+    font-size: var(--text-sm);
+    font-weight: 500;
+  }
+
+  ol {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  li {
+    display: grid;
+    grid-template-columns: 2rem minmax(0, 1fr);
+    align-items: baseline;
+    padding: 0.2rem 0;
+  }
+
+  time {
+    color: var(--ink-3);
+    font-size: var(--text-sm);
+    font-variant-numeric: tabular-nums;
+  }
+
+  a {
+    position: relative;
+    padding-left: 0.9rem;
+    text-decoration: none;
+    line-height: 1.5;
+  }
+
+  /* Status dot before each title */
+  a::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0.6em;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--status-color);
+  }
+
+  a:hover {
+    color: var(--accent);
+  }
+
+  .empty {
+    color: var(--ink-3);
+  }
+</style>

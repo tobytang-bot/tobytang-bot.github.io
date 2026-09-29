@@ -1,15 +1,9 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
-import StatusBadge from "../components/StatusBadge.astro";
-import { articleUrl, getKnowledge, getWorklogs, isoDate } from "../lib/content";
-import { COLLECTION_LABEL } from "../lib/status";
+import ArticleList from "../components/ArticleList.astro";
+import { getArticles } from "../lib/content";
 
-const recent = [...(await getWorklogs()), ...(await getKnowledge())]
-  .sort(
-    (a, b) =>
-      (b.data.updated ?? b.data.date).getTime() - (a.data.updated ?? a.data.date).getTime(),
-  )
-  .slice(0, 10);
+const recent = (await getArticles()).slice(0, 10);
 ---
 
 <BaseLayout
@@ -22,23 +16,7 @@ const recent = [...(await getWorklogs()), ...(await getKnowledge())]
 
     <section aria-labelledby="recent-title">
       <h2 id="recent-title">最近更新</h2>
-      <ol class="recent">
-        {
-          recent.map((entry) => (
-            <li>
-              <a href={articleUrl(entry)}>{entry.data.title}</a>
-              <p>{entry.data.description}</p>
-              <div class="row">
-                <StatusBadge status={entry.data.status} />
-                <span>{COLLECTION_LABEL[entry.collection]}</span>
-                <time datetime={isoDate(entry.data.updated ?? entry.data.date)}>
-                  {isoDate(entry.data.updated ?? entry.data.date)}
-                </time>
-              </div>
-            </li>
-          ))
-        }
-      </ol>
+      <ArticleList entries={recent} />
     </section>
   </div>
 </BaseLayout>
@@ -67,41 +45,5 @@ const recent = [...(await getWorklogs()), ...(await getKnowledge())]
     font-size: var(--text-sm);
     font-weight: 600;
     color: var(--ink-3);
-  }
-
-  .recent {
-    margin: 0;
-    padding: 0;
-    list-style: none;
-    border-top: 1px solid var(--border);
-  }
-
-  .recent li {
-    padding: 1.1rem 0;
-    border-bottom: 1px solid var(--border);
-  }
-
-  .recent a {
-    font-size: var(--text-lg);
-    font-weight: 600;
-    text-decoration: none;
-  }
-
-  .recent a:hover {
-    color: var(--accent);
-  }
-
-  .recent p {
-    margin: 0.3rem 0 0.5rem;
-    color: var(--ink-2);
-    line-height: 1.6;
-  }
-
-  .row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.4rem 1.25rem;
-    color: var(--ink-3);
-    font-size: var(--text-sm);
   }
 </style>

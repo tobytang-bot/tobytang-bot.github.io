@@ -1,0 +1,83 @@
+---
+import StatusBadge from "./StatusBadge.astro";
+import { articleUrl, isoDate, lastModified, type Article } from "../lib/content";
+import { COLLECTION_LABEL } from "../lib/status";
+
+interface Props {
+  entries: Article[];
+  /** Which date to show: the work date, or the last update. */
+  date?: "date" | "modified";
+  showCollection?: boolean;
+  /** Shown when there are no entries. */
+  empty?: string;
+}
+
+const { entries, date = "modified", showCollection = true, empty = "还没有文章。" } = Astro.props;
+const shownDate = (e: Article) => isoDate(date === "date" ? e.data.date : lastModified(e));
+---
+
+{
+  entries.length === 0 ? (
+    <p class="empty">{empty}</p>
+  ) : (
+    <ol class="list">
+      {entries.map((entry) => (
+        <li>
+          <a href={articleUrl(entry)}>{entry.data.title}</a>
+          <p>{entry.data.description}</p>
+          <div class="row">
+            <StatusBadge status={entry.data.status} />
+            {showCollection && <span>{COLLECTION_LABEL[entry.collection]}</span>}
+            <time datetime={shownDate(entry)}>{shownDate(entry)}</time>
+          </div>
+        </li>
+      ))}
+    </ol>
+  )
+}
+
+<style>
+  .list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border-top: 1px solid var(--border);
+  }
+
+  li {
+    padding: 1.1rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  a {
+    font-size: var(--text-lg);
+    font-weight: 600;
+    line-height: 1.4;
+    text-decoration: none;
+  }
+
+  a:hover {
+    color: var(--accent);
+  }
+
+  p {
+    margin: 0.3rem 0 0.5rem;
+    color: var(--ink-2);
+    line-height: 1.6;
+  }
+
+  .row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1.25rem;
+    color: var(--ink-3);
+    font-size: var(--text-sm);
+  }
+
+  .empty {
+    margin: 0;
+    padding: 1.25rem 0;
+    border-top: 1px solid var(--border);
+    color: var(--ink-3);
+  }
+</style>
