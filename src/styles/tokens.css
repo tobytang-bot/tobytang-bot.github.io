@@ -1,0 +1,90 @@
+/* Design tokens. Light is the default; dark applies from the system setting
+   unless the reader picked light, or whenever the reader picked dark. */
+
+:root {
+  color-scheme: light;
+
+  --bg: #f7f8fa;
+  --surface: #ffffff;
+  --surface-2: #eff1f5;
+  --border: #e1e4ea;
+  --ink: #1c2330;
+  --ink-2: #4a5263;
+  --ink-3: #7a8294;
+  --accent: #5b5bd6;
+  --accent-soft: #ececfb;
+  --code-bg: #f1f3f7;
+  --glass: rgb(247 248 250 / 0.72);
+
+  /* Status signal: the one place color carries meaning. */
+  --status-investigating: #b7791f;
+  --status-solved: #1f8a4c;
+  --status-reference: #2f6fdb;
+  --status-deprecated: #8a90a0;
+
+  --font-sans: "IBM Plex Sans Variable", "PingFang SC", "Hiragino Sans GB",
+    "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, "SF Mono", Menlo,
+    monospace;
+
+  /* Type scale (1.2 ratio from 16px). */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.2rem;
+  --text-xl: 1.44rem;
+  --text-2xl: 1.728rem;
+  --text-3xl: 2.074rem;
+
+  --header-h: 3.5rem;
+  --sidebar-w: 15.5rem;
+  --toc-w: 13.75rem;
+  --measure: 45rem;
+  --shell-w: calc(var(--sidebar-w) + var(--measure) + 6rem + var(--toc-w) + 1.5rem);
+  --radius-sm: 4px;
+  --radius: 8px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+
+    --bg: #161a21;
+    --surface: #1d222b;
+    --surface-2: #232935;
+    --border: #2c3340;
+    --ink: #e6e9ef;
+    --ink-2: #aab1bf;
+    --ink-3: #7c8496;
+    --accent: #9b9bf5;
+    --accent-soft: #272a45;
+    --code-bg: #1b2029;
+    --glass: rgb(22 26 33 / 0.7);
+
+    --status-investigating: #e0a44a;
+    --status-solved: #4cc07f;
+    --status-reference: #6b9df0;
+    --status-deprecated: #7c8496;
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --bg: #161a21;
+  --surface: #1d222b;
+  --surface-2: #232935;
+  --border: #2c3340;
+  --ink: #e6e9ef;
+  --ink-2: #aab1bf;
+  --ink-3: #7c8496;
+  --accent: #9b9bf5;
+  --accent-soft: #272a45;
+  --code-bg: #1b2029;
+  --glass: rgb(22 26 33 / 0.7);
+
+  --status-investigating: #e0a44a;
+  --status-solved: #4cc07f;
+  --status-reference: #6b9df0;
+  --status-deprecated: #7c8496;
+}

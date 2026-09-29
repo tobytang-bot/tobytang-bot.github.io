@@ -1,0 +1,13 @@
+/* Maps data-status to --status-color so any component can use the signal. */
+[data-status="investigating"] {
+  --status-color: var(--status-investigating);
+}
+[data-status="solved"] {
+  --status-color: var(--status-solved);
+}
+[data-status="reference"] {
+  --status-color: var(--status-reference);
+}
+[data-status="deprecated"] {
+  --status-color: var(--status-deprecated);
+}

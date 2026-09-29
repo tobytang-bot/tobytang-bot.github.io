@@ -1,0 +1,173 @@
+---
+import { getNav } from "../lib/nav";
+import { STATUS_LABEL } from "../lib/status";
+
+const sections = await getNav();
+const here = Astro.url.pathname;
+---
+
+<div class="nav-backdrop" data-nav-backdrop hidden></div>
+<nav class="sidebar" id="site-nav" aria-label="站点导航">
+  {
+    sections.map((section) => (
+      <section class="section">
+        <h2 class="section-title">{section.title}</h2>
+        {section.groups.map((group) => (
+          <div class="group">
+            <h3 class="group-title">{group.title}</h3>
+            <ul>
+              {group.items.map((item) => (
+                <li>
+                  <a
+                    href={item.url}
+                    data-status={item.status}
+                    aria-current={item.url === here ? "page" : undefined}
+                  >
+                    <span class="dot" title={STATUS_LABEL[item.status]} />
+                    <span class="label">{item.title}</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </section>
+    ))
+  }
+</nav>
+
+<script>
+  const nav = document.getElementById("site-nav");
+  const toggle = document.querySelector<HTMLButtonElement>("[data-nav-toggle]");
+  const backdrop = document.querySelector<HTMLElement>("[data-nav-backdrop]");
+
+  if (nav && toggle && backdrop) {
+    const setOpen = (open: boolean) => {
+      nav.toggleAttribute("data-open", open);
+      backdrop.hidden = !open;
+      toggle.setAttribute("aria-expanded", String(open));
+      document.body.style.overflow = open ? "hidden" : "";
+      if (open) nav.querySelector<HTMLElement>("a")?.focus();
+    };
+
+    toggle.addEventListener("click", () => setOpen(!nav.hasAttribute("data-open")));
+    backdrop.addEventListener("click", () => setOpen(false));
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && nav.hasAttribute("data-open")) {
+        setOpen(false);
+        toggle.focus();
+      }
+    });
+    window.matchMedia("(min-width: 861px)").addEventListener("change", (e) => {
+      if (e.matches) setOpen(false);
+    });
+  }
+</script>
+
+<style>
+  .sidebar {
+    position: sticky;
+    top: var(--header-h);
+    align-self: start;
+    height: calc(100dvh - var(--header-h));
+    overflow-y: auto;
+    scrollbar-width: thin;
+    padding: 1.5rem 1rem 3rem 1.25rem;
+    border-right: 1px solid var(--border);
+    font-size: var(--text-sm);
+  }
+
+  .section + .section {
+    margin-top: 1.75rem;
+  }
+
+  .section-title {
+    margin: 0 0 0.5rem;
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  .group + .group {
+    margin-top: 0.9rem;
+  }
+
+  .group-title {
+    margin: 0 0 0.25rem;
+    font-size: var(--text-xs);
+    font-weight: 500;
+    color: var(--ink-3);
+  }
+
+  ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  a {
+    display: flex;
+    align-items: baseline;
+    gap: 0.55rem;
+    padding: 0.3rem 0.5rem;
+    margin-left: -0.5rem;
+    border-radius: var(--radius-sm);
+    color: var(--ink-2);
+    text-decoration: none;
+    line-height: 1.45;
+  }
+
+  a:hover {
+    background: var(--surface-2);
+    color: var(--ink);
+  }
+
+  a[aria-current="page"] {
+    background: var(--accent-soft);
+    color: var(--ink);
+    font-weight: 500;
+  }
+
+  .dot {
+    flex: none;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--status-color);
+    transform: translateY(-0.1em);
+  }
+
+  .nav-backdrop {
+    display: none;
+  }
+
+  @media (max-width: 860px) {
+    .sidebar {
+      position: fixed;
+      top: var(--header-h);
+      left: 0;
+      z-index: 30;
+      width: min(20rem, 85vw);
+      background: var(--bg);
+      transform: translateX(-100%);
+      visibility: hidden;
+      transition:
+        transform 180ms ease,
+        visibility 0s linear 180ms;
+    }
+
+    .sidebar[data-open] {
+      transform: none;
+      visibility: visible;
+      transition: transform 180ms ease;
+    }
+
+    .nav-backdrop:not([hidden]) {
+      display: block;
+      position: fixed;
+      inset: var(--header-h) 0 0 0;
+      z-index: 20;
+      background: rgb(0 0 0 / 0.35);
+    }
+  }
+</style>

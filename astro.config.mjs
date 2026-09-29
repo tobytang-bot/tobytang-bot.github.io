@@ -6,6 +6,14 @@ export default defineConfig({
   base: "/",
   trailingSlash: "always",
 
+  markdown: {
+    shikiConfig: {
+      themes: { light: "github-light", dark: "github-dark" },
+      // Colors come from CSS (--shiki-light / --shiki-dark) so the theme toggle controls them.
+      defaultColor: false,
+    },
+  },
+
   // Legacy Jekyll URLs (/posts/:title/) → new content routes.
   // The old host (tobytang-ebrook.github.io/toby.github.io/) is handled by a
   // redirect-only site in the legacy repo; these cover old paths on the new host.

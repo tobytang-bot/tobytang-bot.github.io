@@ -1,7 +1,12 @@
 ---
+import "../styles/prose.css";
 import { getEntries, getEntry, render } from "astro:content";
 import BaseLayout from "./BaseLayout.astro";
+import ProseEnhance from "../components/ProseEnhance.astro";
+import StatusBadge from "../components/StatusBadge.astro";
+import Toc from "../components/Toc.astro";
 import { isoDate, type Article } from "../lib/content";
+import { COLLECTION_LABEL } from "../lib/status";
 
 interface Props {
   entry: Article;
@@ -12,63 +17,143 @@ const { title, description, date, updated, status, tags } = entry.data;
 const { Content, headings } = await render(entry);
 const topics = await getEntries(entry.data.topics);
 const project = entry.data.project && (await getEntry(entry.data.project));
-const toc = headings.filter((h) => h.depth <= 3);
 ---
 
 <BaseLayout title={title} description={description}>
-  <article>
-    <header>
-      <p>{entry.collection}</p>
+  <article class="article">
+    <header class="article-header" data-status={status}>
       <h1>{title}</h1>
-      <p>{description}</p>
-      <dl>
-        <dt>Date</dt>
-        <dd><time datetime={isoDate(date)}>{isoDate(date)}</time></dd>
+      <p class="description">{description}</p>
+      <dl class="meta">
+        <div>
+          <dt>状态</dt>
+          <dd><StatusBadge status={status} /></dd>
+        </div>
+        <div>
+          <dt>类型</dt>
+          <dd>{COLLECTION_LABEL[entry.collection]}</dd>
+        </div>
+        <div>
+          <dt>日期</dt>
+          <dd><time datetime={isoDate(date)}>{isoDate(date)}</time></dd>
+        </div>
         {
           updated && (
-            <>
-              <dt>Updated</dt>
+            <div>
+              <dt>更新</dt>
               <dd><time datetime={isoDate(updated)}>{isoDate(updated)}</time></dd>
-            </>
+            </div>
           )
         }
-        <dt>Status</dt>
-        <dd>{status}</dd>
-        <dt>Topics</dt>
-        <dd>{topics.map((t) => t.data.title).join(" · ")}</dd>
         {
           project && (
-            <>
-              <dt>Project</dt>
+            <div>
+              <dt>项目</dt>
               <dd>{project.data.title}</dd>
-            </>
+            </div>
           )
         }
-        {
-          tags.length > 0 && (
-            <>
-              <dt>Tags</dt>
-              <dd>{tags.join(", ")}</dd>
-            </>
-          )
-        }
+        <div class="meta-wide">
+          <dt>主题</dt>
+          <dd>
+            <ul class="chips">
+              {topics.map((t) => <li>{t.data.title}</li>)}
+              {tags.map((tag) => <li class="tag">{tag}</li>)}
+            </ul>
+          </dd>
+        </div>
       </dl>
     </header>
 
-    {
-      toc.length > 0 && (
-        <nav aria-label="Contents">
-          <ul>
-            {toc.map((h) => (
-              <li data-depth={h.depth}>
-                <a href={`#${h.slug}`}>{h.text}</a>
-              </li>
-            ))}
-          </ul>
-        </nav>
-      )
-    }
+    <Toc headings={headings} variant="inline" />
 
-    <Content />
+    <div class="prose">
+      <Content />
+    </div>
   </article>
+
+  <Toc slot="aside" headings={headings} variant="aside" />
+  <ProseEnhance />
 </BaseLayout>
+
+<style>
+  .article {
+    max-width: var(--measure);
+  }
+
+  /* The status rail: the article's one signal of color. */
+  .article-header {
+    margin: 0 0 2.5rem;
+    padding: 0.1rem 0 0 1.25rem;
+    border-left: 3px solid var(--status-color);
+  }
+
+  h1 {
+    margin: 0 0 0.6rem;
+    font-size: var(--text-3xl);
+    font-weight: 650;
+    line-height: 1.25;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+  }
+
+  .description {
+    margin: 0 0 1.5rem;
+    color: var(--ink-2);
+    font-size: var(--text-lg);
+    line-height: 1.6;
+    text-wrap: pretty;
+  }
+
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.9rem 2rem;
+    margin: 0;
+    font-size: var(--text-sm);
+  }
+
+  .meta-wide {
+    flex-basis: 100%;
+  }
+
+  dt {
+    margin-bottom: 0.15rem;
+    color: var(--ink-3);
+    font-size: var(--text-xs);
+  }
+
+  dd {
+    margin: 0;
+    color: var(--ink);
+  }
+
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin: 0.1rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .chips li {
+    padding: 0.05rem 0.55rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--ink-2);
+  }
+
+  .chips .tag {
+    border-style: dashed;
+  }
+
+  @media (max-width: 860px) {
+    h1 {
+      font-size: var(--text-2xl);
+    }
+    .article-header {
+      padding-left: 1rem;
+    }
+  }
+</style>

@@ -1,0 +1,191 @@
+---
+import type { MarkdownHeading } from "astro";
+
+interface Props {
+  headings: MarkdownHeading[];
+  /** aside: sticky right column (wide screens); inline: collapsible block above the article. */
+  variant: "aside" | "inline";
+}
+
+const { headings, variant } = Astro.props;
+const items = headings.filter((h) => h.depth === 2 || h.depth === 3);
+---
+
+{
+  items.length > 0 &&
+    (variant === "aside" ? (
+      <aside class="toc toc-aside" aria-labelledby="toc-title">
+        <h2 class="toc-title" id="toc-title">本页目录</h2>
+        <ol>
+          {items.map((h) => (
+            <li data-depth={h.depth}>
+              <a href={`#${h.slug}`} data-toc-link={h.slug}>{h.text}</a>
+            </li>
+          ))}
+        </ol>
+      </aside>
+    ) : (
+      <details class="toc toc-inline">
+        <summary>本页目录</summary>
+        <ol>
+          {items.map((h) => (
+            <li data-depth={h.depth}>
+              <a href={`#${h.slug}`} data-toc-link={h.slug}>{h.text}</a>
+            </li>
+          ))}
+        </ol>
+      </details>
+    ))
+}
+
+<script>
+  // Highlight the section being read: the last heading above the header line.
+  const links = [...document.querySelectorAll<HTMLAnchorElement>("[data-toc-link]")];
+  const slugs = [...new Set(links.map((a) => a.dataset.tocLink!))];
+  const headings = slugs
+    .map((slug) => document.getElementById(slug))
+    .filter((el): el is HTMLElement => el !== null);
+
+  if (headings.length > 0) {
+    let active: string | undefined;
+    let queued = false;
+
+    const update = () => {
+      queued = false;
+      const line = parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 80;
+      let current = headings[0].id;
+      for (const h of headings) {
+        if (h.getBoundingClientRect().top - line <= 1) current = h.id;
+        else break;
+      }
+      if (current === active) return;
+      active = current;
+      for (const a of links) {
+        if (a.dataset.tocLink === current) {
+          a.setAttribute("aria-current", "location");
+          keepVisible(a);
+        } else {
+          a.removeAttribute("aria-current");
+        }
+      }
+    };
+
+    // Scroll only the TOC card (not the page) so the active item stays in view.
+    const keepVisible = (a: HTMLElement) => {
+      const box = a.closest<HTMLElement>(".toc-aside");
+      if (!box || box.scrollHeight <= box.clientHeight) return;
+      const top = a.getBoundingClientRect().top - box.getBoundingClientRect().top + box.scrollTop;
+      if (top < box.scrollTop + 40 || top > box.scrollTop + box.clientHeight - 40) {
+        box.scrollTop = top - box.clientHeight / 2;
+      }
+    };
+
+    addEventListener(
+      "scroll",
+      () => {
+        if (!queued) {
+          queued = true;
+          requestAnimationFrame(update);
+        }
+      },
+      { passive: true },
+    );
+    // The browser jumps to a #fragment after scripts run; re-check once it has.
+    addEventListener("load", update);
+    addEventListener("hashchange", update);
+    update();
+
+    // Collapse the inline TOC after choosing a section on small screens.
+    for (const details of document.querySelectorAll<HTMLDetailsElement>(".toc-inline")) {
+      details.addEventListener("click", (e) => {
+        if ((e.target as Element).closest("a")) details.open = false;
+      });
+    }
+  }
+</script>
+
+<style>
+  .toc ol {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .toc li[data-depth="3"] {
+    padding-left: 0.85rem;
+  }
+
+  .toc a {
+    display: block;
+    padding: 0.22rem 0 0.22rem 0.75rem;
+    margin-left: -1px;
+    border-left: 1px solid transparent;
+    color: var(--ink-3);
+    text-decoration: none;
+    line-height: 1.45;
+  }
+
+  .toc a:hover {
+    color: var(--ink);
+  }
+
+  .toc a[aria-current] {
+    border-left-color: var(--accent);
+    color: var(--ink);
+  }
+
+  /* Aside: sticky glass card in the right column */
+  .toc-aside {
+    position: sticky;
+    top: calc(var(--header-h) + 1.5rem);
+    max-height: calc(100dvh - var(--header-h) - 3rem);
+    overflow-y: auto;
+    scrollbar-width: thin;
+    padding: 1rem 1rem 1rem 1.1rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: color-mix(in srgb, var(--surface) 60%, transparent);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    font-size: var(--text-sm);
+  }
+
+  .toc-aside ol {
+    border-left: 1px solid var(--border);
+  }
+
+  .toc-title {
+    margin: 0 0 0.6rem;
+    font-size: var(--text-sm);
+    font-weight: 600;
+  }
+
+  /* Inline: collapsible block for screens without the right column */
+  .toc-inline {
+    display: none;
+    margin: 0 0 2rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    font-size: var(--text-sm);
+  }
+
+  .toc-inline summary {
+    padding: 0.65rem 1rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .toc-inline ol {
+    padding: 0 1rem 0.75rem;
+  }
+
+  @media (max-width: 1199px) {
+    .toc-aside {
+      display: none;
+    }
+    .toc-inline {
+      display: block;
+    }
+  }
+</style>

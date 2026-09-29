@@ -1,5 +1,8 @@
 ---
-// Minimal shell for PR #1: semantic HTML only, no styling yet.
+import "../styles/global.css";
+import Header from "../components/Header.astro";
+import Sidebar from "../components/Sidebar.astro";
+
 interface Props {
   title: string;
   description?: string;
@@ -8,6 +11,7 @@ interface Props {
 const { title, description } = Astro.props;
 const siteTitle = "Toby Worklog";
 const canonical = new URL(Astro.url.pathname, Astro.site);
+const hasAside = Astro.slots.has("aside");
 ---
 
 <!doctype html>
@@ -18,13 +22,71 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     <title>{title === siteTitle ? title : `${title} | ${siteTitle}`}</title>
     {description && <meta name="description" content={description} />}
     <link rel="canonical" href={canonical} />
+    <meta name="theme-color" content="#f7f8fa" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#161a21" media="(prefers-color-scheme: dark)" />
+    <script is:inline>
+      try {
+        const theme = localStorage.getItem("theme");
+        if (theme === "light" || theme === "dark") document.documentElement.dataset.theme = theme;
+      } catch {}
+    </script>
   </head>
   <body>
-    <header>
-      <a href="/">{siteTitle}</a>
-    </header>
-    <main>
-      <slot />
-    </main>
+    <a class="skip-link" href="#content">跳到正文</a>
+    <Header />
+    <div class="shell" data-aside={hasAside ? "" : undefined}>
+      <Sidebar />
+      <main id="content" class="main">
+        <slot />
+      </main>
+      {
+        hasAside && (
+          <div class="aside">
+            <slot name="aside" />
+          </div>
+        )
+      }
+    </div>
   </body>
 </html>
+
+<style>
+  .shell {
+    display: grid;
+    grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
+    max-width: var(--shell-w);
+    margin: 0 auto;
+  }
+
+  .shell[data-aside] {
+    grid-template-columns: var(--sidebar-w) minmax(0, 1fr) var(--toc-w);
+  }
+
+  .main {
+    min-width: 0;
+    padding: 2.75rem 3rem 6rem;
+  }
+
+  .aside {
+    padding: 2.75rem 1.5rem 0 0;
+  }
+
+  @media (max-width: 1199px) {
+    .shell[data-aside] {
+      grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
+    }
+    .aside {
+      display: none;
+    }
+  }
+
+  @media (max-width: 860px) {
+    .shell,
+    .shell[data-aside] {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .main {
+      padding: 1.75rem 1rem 4rem;
+    }
+  }
+</style>

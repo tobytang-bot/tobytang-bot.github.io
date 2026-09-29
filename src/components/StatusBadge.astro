@@ -1,0 +1,29 @@
+---
+import { STATUS_LABEL, type Status } from "../lib/status";
+
+interface Props {
+  status: Status;
+}
+
+const { status } = Astro.props;
+---
+
+<span class="status" data-status={status}>{STATUS_LABEL[status]}</span>
+
+<style>
+  .status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    color: var(--status-color);
+    font-weight: 500;
+  }
+
+  .status::before {
+    content: "";
+    width: 0.5em;
+    height: 0.5em;
+    border-radius: 50%;
+    background: currentColor;
+  }
+</style>

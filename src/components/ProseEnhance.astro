@@ -1,0 +1,48 @@
+---
+// Progressive enhancements for rendered Markdown: heading anchor links and
+// code copy buttons. Headings already carry ids, so deep links work without JS.
+---
+
+<script>
+  for (const heading of document.querySelectorAll<HTMLElement>(
+    ".prose :is(h2, h3, h4)[id]",
+  )) {
+    const anchor = document.createElement("a");
+    anchor.className = "heading-anchor";
+    anchor.href = `#${heading.id}`;
+    anchor.textContent = "#";
+    anchor.setAttribute("aria-hidden", "true");
+    anchor.tabIndex = -1;
+    heading.append(anchor);
+  }
+
+  for (const pre of document.querySelectorAll<HTMLPreElement>(".prose pre")) {
+    const wrapper = document.createElement("div");
+    wrapper.className = "code-block";
+    pre.replaceWith(wrapper);
+    wrapper.append(pre);
+
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "code-copy";
+    button.textContent = "复制";
+    button.setAttribute("aria-label", "复制代码");
+    wrapper.append(button);
+
+    let timer: number | undefined;
+    button.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(pre.querySelector("code")?.innerText ?? pre.innerText);
+        button.textContent = "已复制";
+      } catch {
+        button.textContent = "复制失败";
+      }
+      button.dataset.copied = "";
+      clearTimeout(timer);
+      timer = window.setTimeout(() => {
+        button.textContent = "复制";
+        delete button.dataset.copied;
+      }, 1600);
+    });
+  }
+</script>

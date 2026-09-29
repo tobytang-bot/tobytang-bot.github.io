@@ -1,31 +1,107 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
+import StatusBadge from "../components/StatusBadge.astro";
 import { articleUrl, getKnowledge, getWorklogs, isoDate } from "../lib/content";
+import { COLLECTION_LABEL } from "../lib/status";
 
-const sections = [
-  { title: "Worklog", entries: await getWorklogs() },
-  { title: "Knowledge", entries: await getKnowledge() },
-];
+const recent = [...(await getWorklogs()), ...(await getKnowledge())]
+  .sort(
+    (a, b) =>
+      (b.data.updated ?? b.data.date).getTime() - (a.data.updated ?? a.data.date).getTime(),
+  )
+  .slice(0, 10);
 ---
 
 <BaseLayout
   title="Toby Worklog"
-  description="Engineering worklog, knowledge base and problem/solution archive."
+  description="Magento、Cloud、PHP、DevOps 与 AI 工作流的工作日志、知识库和问题解决记录。"
 >
-  <h1>Toby Worklog</h1>
-  {
-    sections.map(({ title, entries }) => (
-      <section>
-        <h2>{title}</h2>
-        <ul>
-          {entries.map((entry) => (
+  <div class="home">
+    <h1>Toby Worklog</h1>
+    <p class="lede">Magento、Cloud、PHP、DevOps 与 AI 工作流的工作日志、知识库和问题解决记录。</p>
+
+    <section aria-labelledby="recent-title">
+      <h2 id="recent-title">最近更新</h2>
+      <ol class="recent">
+        {
+          recent.map((entry) => (
             <li>
-              <time datetime={isoDate(entry.data.date)}>{isoDate(entry.data.date)}</time>{" "}
               <a href={articleUrl(entry)}>{entry.data.title}</a>
+              <p>{entry.data.description}</p>
+              <div class="row">
+                <StatusBadge status={entry.data.status} />
+                <span>{COLLECTION_LABEL[entry.collection]}</span>
+                <time datetime={isoDate(entry.data.updated ?? entry.data.date)}>
+                  {isoDate(entry.data.updated ?? entry.data.date)}
+                </time>
+              </div>
             </li>
-          ))}
-        </ul>
-      </section>
-    ))
-  }
+          ))
+        }
+      </ol>
+    </section>
+  </div>
 </BaseLayout>
+
+<style>
+  .home {
+    max-width: var(--measure);
+  }
+
+  h1 {
+    margin: 0 0 0.5rem;
+    font-size: var(--text-3xl);
+    font-weight: 650;
+    letter-spacing: -0.02em;
+  }
+
+  .lede {
+    margin: 0 0 3rem;
+    color: var(--ink-2);
+    font-size: var(--text-lg);
+    line-height: 1.6;
+  }
+
+  h2 {
+    margin: 0 0 0.75rem;
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--ink-3);
+  }
+
+  .recent {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border-top: 1px solid var(--border);
+  }
+
+  .recent li {
+    padding: 1.1rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .recent a {
+    font-size: var(--text-lg);
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .recent a:hover {
+    color: var(--accent);
+  }
+
+  .recent p {
+    margin: 0.3rem 0 0.5rem;
+    color: var(--ink-2);
+    line-height: 1.6;
+  }
+
+  .row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1.25rem;
+    color: var(--ink-3);
+    font-size: var(--text-sm);
+  }
+</style>
