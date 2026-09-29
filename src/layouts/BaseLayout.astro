@@ -96,8 +96,8 @@ const jsonLd = (data: Record<string, unknown>) =>
     {structuredData.map((data) => <script type="application/ld+json" set:html={jsonLd(data)} />)}
     <meta name="theme-color" content="#eef2f5" />
     <script is:inline define:vars={{ themeInit }}>
-      // Runs before first paint: resolve mode × color from storage and the
-      // system setting. Keep in sync with src/lib/theme-manager.ts.
+      // Runs before first paint: resolve mode × color (and Reduce Motion) from
+      // storage and the system setting. Keep in sync with src/lib/theme-manager.ts.
       const { keys, legacyKey, legacy, colors, defaultColor, dark } = themeInit;
       const root = document.documentElement;
       let mode = null;
@@ -105,6 +105,7 @@ const jsonLd = (data: Record<string, unknown>) =>
       try {
         mode = localStorage.getItem(keys.mode);
         color = localStorage.getItem(keys.color);
+        if (localStorage.getItem(keys.motion) === "reduce") root.dataset.motion = "reduce";
         const old = localStorage.getItem(legacyKey);
         if (old !== null) {
           const [oldMode, oldColor] = Object.hasOwn(legacy, old) ? legacy[old] : [];

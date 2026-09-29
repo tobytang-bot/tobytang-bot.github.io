@@ -23,7 +23,12 @@ export const MODES = [
 export type ColorThemeId = (typeof COLOR_THEMES)[number]["id"];
 export type ThemeMode = (typeof MODES)[number]["id"];
 
-export const STORAGE_KEYS = { mode: "blog.theme.mode", color: "blog.theme.color" } as const;
+export const STORAGE_KEYS = {
+  mode: "blog.theme.mode",
+  color: "blog.theme.color",
+  /** "reduce" when the reader turned on Reduce Motion. */
+  motion: "blog.motion",
+} as const;
 
 /** Values of the previous single `theme` key, as [mode, color?]. */
 export const LEGACY_KEY = "theme";
