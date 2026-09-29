@@ -1,0 +1,474 @@
+---
+// Site search: a header button plus a <dialog> driven by the Pagefind JS API.
+// The index (/pagefind/) is generated after `astro build`, so search works in
+// `npm run build && npm run preview` and in production, not in `astro dev`.
+const filterFields = [
+  { key: "type", label: "类型" },
+  { key: "topic", label: "主题" },
+  { key: "project", label: "项目" },
+  { key: "status", label: "状态" },
+];
+---
+
+<button class="search-trigger" type="button" data-search-open hidden>
+  <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+    <circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8"></circle>
+    <path d="m16 16 4.5 4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path>
+  </svg>
+  <span class="trigger-label">搜索</span>
+  <kbd data-search-shortcut>⌘K</kbd>
+</button>
+
+<dialog class="search" aria-label="搜索" data-search-dialog>
+  <div class="panel">
+    <div class="field">
+      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+        <circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8"></circle>
+        <path d="m16 16 4.5 4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path>
+      </svg>
+      <input
+        type="search"
+        placeholder="搜索标题、正文、命令、报错信息…"
+        autocomplete="off"
+        spellcheck="false"
+        role="combobox"
+        aria-expanded="false"
+        aria-controls="search-results"
+        aria-autocomplete="list"
+        aria-label="搜索关键词"
+        data-search-input
+      />
+      <button class="close" type="button" data-search-close>Esc</button>
+    </div>
+
+    <div class="filters" role="group" aria-label="筛选">
+      {
+        filterFields.map((f) => (
+          <label>
+            <span class="visually-hidden">{f.label}</span>
+            <select data-search-filter={f.key}>
+              <option value="">{f.label}：全部</option>
+            </select>
+          </label>
+        ))
+      }
+    </div>
+
+    <p class="status" role="status" aria-live="polite" data-search-status>
+      输入关键词，或选择筛选条件。
+    </p>
+    <ul class="results" id="search-results" role="listbox" aria-label="搜索结果" data-search-results>
+    </ul>
+    <button class="more" type="button" data-search-more hidden>显示更多结果</button>
+  </div>
+</dialog>
+
+<script>
+  type PagefindResult = {
+    url: string;
+    excerpt: string;
+    meta: Record<string, string>;
+  };
+  type PagefindSearch = {
+    results: { id: string; data: () => Promise<PagefindResult> }[];
+  };
+  type Pagefind = {
+    options: (o: Record<string, unknown>) => Promise<void>;
+    filters: () => Promise<Record<string, Record<string, number>>>;
+    search: (
+      term: string | null,
+      o?: { filters?: Record<string, string> },
+    ) => Promise<PagefindSearch | null>;
+  };
+
+  const PAGE_SIZE = 10;
+  const STATUS_LABEL: Record<string, string> = {
+    investigating: "调查中",
+    solved: "已解决",
+    reference: "参考",
+    deprecated: "已过时",
+  };
+
+  const dialog = document.querySelector<HTMLDialogElement>("[data-search-dialog]")!;
+  const input = dialog.querySelector<HTMLInputElement>("[data-search-input]")!;
+  const list = dialog.querySelector<HTMLUListElement>("[data-search-results]")!;
+  const status = dialog.querySelector<HTMLElement>("[data-search-status]")!;
+  const more = dialog.querySelector<HTMLButtonElement>("[data-search-more]")!;
+  const selects = [...dialog.querySelectorAll<HTMLSelectElement>("[data-search-filter]")];
+  const trigger = document.querySelector<HTMLButtonElement>("[data-search-open]")!;
+
+  const isMac = /Mac|iPhone|iPad/.test(navigator.platform);
+  trigger.querySelector("[data-search-shortcut]")!.textContent = isMac ? "⌘K" : "Ctrl K";
+  trigger.hidden = false; // Search needs JS; the button only appears when it can work.
+
+  let loading: Promise<Pagefind | undefined> | undefined;
+  let results: PagefindSearch["results"] = [];
+  let shown = 0;
+  let active = -1;
+  let runId = 0;
+
+  function load(): Promise<Pagefind | undefined> {
+    loading ??= (async () => {
+      try {
+        const url = `${import.meta.env.BASE_URL}pagefind/pagefind.js`;
+        const pf = (await import(/* @vite-ignore */ url)) as Pagefind;
+        await pf.options({ excerptLength: 24 });
+        const counts = await pf.filters();
+        for (const select of selects) {
+          const values = Object.entries(counts[select.dataset.searchFilter!] ?? {}).sort(
+            ([a], [b]) => a.localeCompare(b, "zh-CN"),
+          );
+          for (const [value, n] of values) {
+            select.add(new Option(`${value}（${n}）`, value));
+          }
+        }
+        return pf;
+      } catch {
+        status.textContent =
+          "搜索索引尚未生成。运行 npm run build 后用 npm run preview 预览即可使用搜索。";
+        return undefined;
+      }
+    })();
+    return loading;
+  }
+
+  function currentFilters(): Record<string, string> {
+    const filters: Record<string, string> = {};
+    for (const s of selects) if (s.value) filters[s.dataset.searchFilter!] = s.value;
+    return filters;
+  }
+
+  async function run() {
+    const id = ++runId;
+    const pf = await load();
+    if (!pf || id !== runId) return;
+
+    const term = input.value.trim();
+    const filters = currentFilters();
+    if (!term && Object.keys(filters).length === 0) {
+      results = [];
+      render([], true);
+      status.textContent = "输入关键词，或选择筛选条件。";
+      return;
+    }
+
+    const search = await pf.search(term || null, { filters });
+    if (!search || id !== runId) return; // superseded by a newer query
+    results = search.results;
+    shown = 0;
+    list.replaceChildren();
+    await showMore(id);
+    status.textContent =
+      results.length === 0
+        ? "没有找到匹配的文章。试试更短的关键词，或放宽筛选条件。"
+        : `找到 ${results.length} 篇`;
+  }
+
+  async function showMore(id = runId) {
+    const page = await Promise.all(results.slice(shown, shown + PAGE_SIZE).map((r) => r.data()));
+    if (id !== runId) return;
+    shown += page.length;
+    render(page, false);
+  }
+
+  function render(page: PagefindResult[], reset: boolean) {
+    if (reset) list.replaceChildren();
+    for (const r of page) {
+      const i = list.children.length;
+      const li = document.createElement("li");
+      li.id = `search-option-${i}`;
+      li.setAttribute("role", "option");
+      li.dataset.status = r.meta.status ?? "";
+
+      const a = document.createElement("a");
+      a.href = r.url;
+      a.tabIndex = -1;
+
+      const title = document.createElement("span");
+      title.className = "r-title";
+      title.textContent = r.meta.title ?? r.url;
+
+      const excerpt = document.createElement("span");
+      excerpt.className = "r-excerpt";
+      excerpt.innerHTML = r.excerpt; // Pagefind escapes text and only adds <mark>.
+
+      const meta = document.createElement("span");
+      meta.className = "r-meta";
+      meta.textContent = [STATUS_LABEL[r.meta.status] ?? "", r.meta.type ?? "", r.meta.date ?? ""]
+        .filter(Boolean)
+        .join("  ");
+
+      a.append(title, excerpt, meta);
+      li.append(a);
+      li.addEventListener("mousemove", () => setActive(i));
+      list.append(li);
+    }
+    more.hidden = shown >= results.length;
+    input.setAttribute("aria-expanded", String(list.children.length > 0));
+    if (reset || active < 0) setActive(list.children.length > 0 ? 0 : -1);
+  }
+
+  function setActive(i: number) {
+    list.children[active]?.removeAttribute("aria-selected");
+    active = i;
+    const li = list.children[i] as HTMLElement | undefined;
+    if (li) {
+      li.setAttribute("aria-selected", "true");
+      li.scrollIntoView({ block: "nearest" });
+      input.setAttribute("aria-activedescendant", li.id);
+    } else {
+      input.removeAttribute("aria-activedescendant");
+    }
+  }
+
+  function open() {
+    if (dialog.open) return;
+    dialog.showModal();
+    input.select();
+    void load();
+  }
+
+  let timer: number | undefined;
+  input.addEventListener("input", () => {
+    clearTimeout(timer);
+    timer = window.setTimeout(run, 150);
+  });
+  for (const s of selects) s.addEventListener("change", run);
+  more.addEventListener("click", () => void showMore());
+
+  input.addEventListener("keydown", (e) => {
+    const count = list.children.length;
+    if (e.key === "ArrowDown" && count) {
+      e.preventDefault();
+      setActive((active + 1) % count);
+    } else if (e.key === "ArrowUp" && count) {
+      e.preventDefault();
+      setActive((active - 1 + count) % count);
+    } else if (e.key === "Enter" && active >= 0) {
+      e.preventDefault();
+      list.children[active]?.querySelector("a")?.click();
+    }
+  });
+
+  trigger.addEventListener("click", open);
+  dialog.querySelector("[data-search-close]")!.addEventListener("click", () => dialog.close());
+  dialog.addEventListener("click", (e) => {
+    if (e.target === dialog) dialog.close(); // click on the backdrop
+  });
+
+  document.addEventListener("keydown", (e) => {
+    const typing = (e.target as Element).closest("input, textarea, select, [contenteditable]");
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+      e.preventDefault();
+      if (dialog.open) dialog.close();
+      else open();
+    } else if (e.key === "/" && !typing && !dialog.open) {
+      e.preventDefault();
+      open();
+    }
+  });
+</script>
+
+<style>
+  .search-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    height: 2.25rem;
+    padding: 0 0.5rem 0 0.7rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: color-mix(in srgb, var(--surface) 70%, transparent);
+    color: var(--ink-3);
+    font: inherit;
+    font-size: var(--text-sm);
+    cursor: pointer;
+  }
+
+  .search-trigger[hidden] {
+    display: none;
+  }
+
+  .search-trigger:hover {
+    border-color: var(--ink-3);
+    color: var(--ink);
+  }
+
+  .trigger-label {
+    min-width: 7rem;
+    text-align: left;
+  }
+
+  kbd {
+    padding: 0 0.35rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    font: inherit;
+    font-size: var(--text-xs);
+    line-height: 1.5;
+  }
+
+  .search {
+    width: min(42rem, calc(100vw - 2rem));
+    max-height: min(36rem, calc(100dvh - 6rem));
+    margin: 12vh auto auto;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--surface) 94%, transparent);
+    backdrop-filter: blur(18px) saturate(1.4);
+    -webkit-backdrop-filter: blur(18px) saturate(1.4);
+    color: var(--ink);
+    box-shadow: 0 24px 60px -12px rgb(0 0 0 / 0.35);
+  }
+
+  .search::backdrop {
+    background: rgb(10 12 16 / 0.45);
+    backdrop-filter: blur(2px);
+  }
+
+  .panel {
+    display: flex;
+    flex-direction: column;
+    max-height: inherit;
+  }
+
+  .field {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0 0.75rem 0 1rem;
+    border-bottom: 1px solid var(--border);
+    color: var(--ink-3);
+  }
+
+  input {
+    flex: 1;
+    min-width: 0;
+    height: 3.25rem;
+    border: 0;
+    background: none;
+    color: var(--ink);
+    font: inherit;
+    font-size: var(--text-lg);
+    outline: none;
+  }
+
+  input::-webkit-search-cancel-button {
+    display: none;
+  }
+
+  .close {
+    padding: 0.1rem 0.4rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: none;
+    color: var(--ink-3);
+    font: inherit;
+    font-size: var(--text-xs);
+    cursor: pointer;
+  }
+
+  .filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.65rem 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  select {
+    max-width: 11rem;
+    padding: 0.25rem 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    color: var(--ink-2);
+    font: inherit;
+    font-size: var(--text-sm);
+  }
+
+  .status {
+    margin: 0;
+    padding: 0.6rem 1rem 0.2rem;
+    color: var(--ink-3);
+    font-size: var(--text-sm);
+  }
+
+  .results {
+    flex: 1;
+    min-height: 0;
+    margin: 0;
+    padding: 0.25rem 0.5rem 0.5rem;
+    overflow-y: auto;
+    list-style: none;
+  }
+
+  .results :global(li a) {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    padding: 0.6rem 0.75rem 0.6rem 1rem;
+    border-left: 2px solid var(--status-color, transparent);
+    border-radius: var(--radius-sm);
+    text-decoration: none;
+  }
+
+  .results :global(li[aria-selected="true"] a) {
+    background: var(--accent-soft);
+  }
+
+  .results :global(.r-title) {
+    font-weight: 600;
+    line-height: 1.4;
+  }
+
+  .results :global(.r-excerpt) {
+    color: var(--ink-2);
+    font-size: var(--text-sm);
+    line-height: 1.55;
+  }
+
+  .results :global(mark) {
+    background: none;
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  .results :global(.r-meta) {
+    color: var(--ink-3);
+    font-size: var(--text-xs);
+    white-space: pre;
+  }
+
+  .more {
+    margin: 0 1rem 0.75rem;
+    padding: 0.4rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: none;
+    color: var(--ink-2);
+    font: inherit;
+    font-size: var(--text-sm);
+    cursor: pointer;
+  }
+
+  .more[hidden] {
+    display: none;
+  }
+
+  @media (max-width: 860px) {
+    .trigger-label,
+    kbd {
+      display: none;
+    }
+    .search-trigger {
+      width: 2.25rem;
+      justify-content: center;
+      padding: 0;
+    }
+    .search {
+      margin-top: 4.5rem;
+    }
+  }
+</style>

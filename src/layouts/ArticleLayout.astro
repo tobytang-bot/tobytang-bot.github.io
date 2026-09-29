@@ -7,8 +7,8 @@ import ProseEnhance from "../components/ProseEnhance.astro";
 import StatusBadge from "../components/StatusBadge.astro";
 import Toc from "../components/Toc.astro";
 import { isoDate, type Article } from "../lib/content";
-import { COLLECTION_LABEL } from "../lib/status";
-import { topicUrl } from "../lib/topics";
+import { COLLECTION_LABEL, STATUS_LABEL } from "../lib/status";
+import { ancestry, getTopics, topicUrl } from "../lib/topics";
 
 interface Props {
   entry: Article;
@@ -19,29 +19,51 @@ const { title, description, date, updated, status, tags } = entry.data;
 const { Content, headings } = await render(entry);
 const topics = await getEntries(entry.data.topics);
 const project = entry.data.project && (await getEntry(entry.data.project));
+
+// Search filters. Topics include their ancestors so filtering by a parent
+// topic (Magento) also finds articles filed under a child (Magento Cloud).
+const topicMap = await getTopics();
+const filterTopics = [
+  ...new Set(topics.flatMap((t) => ancestry(t.id, topicMap).map((a) => a.data.title))),
+];
+const filters = [
+  `type:${COLLECTION_LABEL[entry.collection]}`,
+  `status:${STATUS_LABEL[status]}`,
+  ...filterTopics.map((t) => `topic:${t}`),
+  ...(project ? [`project:${project.data.title}`] : []),
+];
+const searchMeta = [
+  `date:${isoDate(date)}`,
+  `status:${status}`,
+  `type:${COLLECTION_LABEL[entry.collection]}`,
+];
 ---
 
 <BaseLayout title={title} description={description}>
-  <article class="article">
+  <article class="article" data-pagefind-body>
+    <div hidden>
+      {filters.map((f) => <span data-pagefind-filter={f} />)}
+      {searchMeta.map((m) => <span data-pagefind-meta={m} />)}
+    </div>
     <header class="article-header" data-status={status}>
-      <h1>{title}</h1>
+      <h1 data-pagefind-meta="title">{title}</h1>
       <p class="description">{description}</p>
       <dl class="meta">
-        <div>
+        <div data-pagefind-ignore>
           <dt>状态</dt>
           <dd><StatusBadge status={status} /></dd>
         </div>
-        <div>
+        <div data-pagefind-ignore>
           <dt>类型</dt>
           <dd>{COLLECTION_LABEL[entry.collection]}</dd>
         </div>
-        <div>
+        <div data-pagefind-ignore>
           <dt>日期</dt>
           <dd><time datetime={isoDate(date)}>{isoDate(date)}</time></dd>
         </div>
         {
           updated && (
-            <div>
+            <div data-pagefind-ignore>
               <dt>更新</dt>
               <dd><time datetime={isoDate(updated)}>{isoDate(updated)}</time></dd>
             </div>
@@ -71,13 +93,17 @@ const project = entry.data.project && (await getEntry(entry.data.project));
       </dl>
     </header>
 
-    <Toc headings={headings} variant="inline" />
+    <div data-pagefind-ignore>
+      <Toc headings={headings} variant="inline" />
+    </div>
 
     <div class="prose">
       <Content />
     </div>
 
-    <ArticleFooter entry={entry} />
+    <div data-pagefind-ignore>
+      <ArticleFooter entry={entry} />
+    </div>
   </article>
 
   <Toc slot="aside" headings={headings} variant="aside" />
