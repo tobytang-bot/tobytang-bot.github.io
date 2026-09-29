@@ -35,6 +35,8 @@
 - id: ai-workflow
   title: AI Workflow
   parent: ai
+- id: markdown
+  title: Markdown
 - id: astro
   title: Astro
 - id: frontend
