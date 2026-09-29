@@ -10,15 +10,15 @@ export default defineConfig({
 
   markdown: {
     shikiConfig: {
-      themes: { light: "github-light", dark: "github-dark" },
+      // github-dark-default: its comment color meets 4.5:1 on our dark code background.
+      themes: { light: "github-light", dark: "github-dark-default" },
       // Colors come from CSS (--shiki-light / --shiki-dark) so the theme toggle controls them.
       defaultColor: false,
     },
   },
 
-  // Legacy Jekyll URLs (/posts/:title/) → new content routes.
-  // The old host (tobytang-ebrook.github.io/toby.github.io/) is handled by a
-  // redirect-only site in the legacy repo; these cover old paths on the new host.
+  // Legacy Jekyll paths (/posts/:title/) on this host → new content routes.
+  // Excluded from sitemap.xml by src/integrations/sitemap.mjs.
   redirects: {
     "/posts/server/": "/knowledge/magento/server-setup/",
     "/posts/docker-command/": "/knowledge/docker/docker-command/",

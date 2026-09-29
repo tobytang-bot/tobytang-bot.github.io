@@ -10,10 +10,10 @@
   --border: #e1e4ea;
   --ink: #1c2330;
   --ink-2: #4a5263;
-  --ink-3: #7a8294;
+  --ink-3: #636b7c; /* ≥ 4.5:1 on bg, surface and surface-2 */
   --accent: #5b5bd6;
   --accent-soft: #ececfb;
-  --code-bg: #f1f3f7;
+  --code-bg: #ffffff; /* github-light comments need a white background for 4.5:1 */
   --glass: rgb(247 248 250 / 0.72);
 
   /* Status signal: the one place color carries meaning. */
@@ -55,7 +55,7 @@
     --border: #2c3340;
     --ink: #e6e9ef;
     --ink-2: #aab1bf;
-    --ink-3: #7c8496;
+    --ink-3: #8b93a5;
     --accent: #9b9bf5;
     --accent-soft: #272a45;
     --code-bg: #1b2029;
@@ -77,7 +77,7 @@
   --border: #2c3340;
   --ink: #e6e9ef;
   --ink-2: #aab1bf;
-  --ink-3: #7c8496;
+  --ink-3: #8b93a5;
   --accent: #9b9bf5;
   --accent-soft: #272a45;
   --code-bg: #1b2029;

@@ -10,7 +10,7 @@ const filterFields = [
 ];
 ---
 
-<button class="search-trigger" type="button" data-search-open hidden>
+<button class="search-trigger" type="button" data-search-open data-search-pending aria-label="搜索">
   <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
     <circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8"></circle>
     <path d="m16 16 4.5 4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path>
@@ -95,11 +95,18 @@ const filterFields = [
   const status = dialog.querySelector<HTMLElement>("[data-search-status]")!;
   const more = dialog.querySelector<HTMLButtonElement>("[data-search-more]")!;
   const selects = [...dialog.querySelectorAll<HTMLSelectElement>("[data-search-filter]")];
-  const trigger = document.querySelector<HTMLButtonElement>("[data-search-open]")!;
+  const triggers = document.querySelectorAll<HTMLButtonElement>("[data-search-open]");
 
   const isMac = /Mac|iPhone|iPad/.test(navigator.platform);
-  trigger.querySelector("[data-search-shortcut]")!.textContent = isMac ? "⌘K" : "Ctrl K";
-  trigger.hidden = false; // Search needs JS; the button only appears when it can work.
+  // Any element with data-search-open opens search (header button, home page entry).
+  // Triggers start invisible (data-search-pending, space reserved to avoid layout shift):
+  // search needs JS, so they only appear when it can work.
+  for (const trigger of triggers) {
+    const shortcut = trigger.querySelector("[data-search-shortcut]");
+    if (shortcut) shortcut.textContent = isMac ? "⌘K" : "Ctrl K";
+    trigger.removeAttribute("data-search-pending");
+    trigger.addEventListener("click", open);
+  }
 
   let loading: Promise<Pagefind | undefined> | undefined;
   let results: PagefindSearch["results"] = [];
@@ -250,7 +257,6 @@ const filterFields = [
     }
   });
 
-  trigger.addEventListener("click", open);
   dialog.querySelector("[data-search-close]")!.addEventListener("click", () => dialog.close());
   dialog.addEventListener("click", (e) => {
     if (e.target === dialog) dialog.close(); // click on the backdrop
@@ -285,8 +291,8 @@ const filterFields = [
     cursor: pointer;
   }
 
-  .search-trigger[hidden] {
-    display: none;
+  :global([data-search-pending]) {
+    visibility: hidden;
   }
 
   .search-trigger:hover {

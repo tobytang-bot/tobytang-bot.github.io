@@ -1,10 +1,45 @@
 ---
+import { getCollection } from "astro:content";
 import BaseLayout from "../layouts/BaseLayout.astro";
 import ArticleList from "../components/ArticleList.astro";
-import { getArticles } from "../lib/content";
+import { articleUrl, getArticles, isoDate, lastModified } from "../lib/content";
+import { STATUS_LABEL } from "../lib/status";
+import { articlesInTopic, getTopics, topicUrl } from "../lib/topics";
 import { SITE } from "../site";
 
-const recent = (await getArticles()).slice(0, 10);
+const [articles, topics, projects] = await Promise.all([
+  getArticles(),
+  getTopics(),
+  getCollection("projects"),
+]);
+const knowledge = articles.filter((a) => a.collection === "knowledge");
+const investigating = articles.filter((a) => a.data.status === "investigating");
+
+const title = (id: string) => topics.get(id)?.data.title ?? id;
+const countIn = (id: string) => articlesInTopic(id, articles, topics).length;
+
+const stats = [
+  { label: "全部文章", value: String(articles.length), url: "/archive/" },
+  ...SITE.featuredTopics.map((id) => {
+    const n = countIn(id);
+    return { label: title(id), value: String(n), url: n > 0 ? topicUrl(id) : undefined };
+  }),
+  {
+    label: "最近更新",
+    value: articles[0] ? isoDate(lastModified(articles[0])) : "—",
+    url: articles[0] ? articleUrl(articles[0]) : undefined,
+  },
+];
+
+// Knowledge by top-level folder (the article's primary topic).
+const knowledgeTopics = [...new Set(knowledge.map((k) => k.id.split("/")[0]))]
+  .map((id) => ({ id, count: knowledge.filter((k) => k.id.startsWith(`${id}/`)).length }))
+  .sort((a, b) => b.count - a.count || title(a.id).localeCompare(title(b.id), "zh-CN"));
+
+const projectRows = projects
+  .map((p) => ({ project: p, count: articles.filter((a) => a.data.project?.id === p.id).length }))
+  .sort((a, b) => b.count - a.count);
+
 const website = {
   "@type": "WebSite",
   name: SITE.title,
@@ -16,40 +51,319 @@ const website = {
 ---
 
 <BaseLayout title={SITE.title} structuredData={[website]}>
-  <div class="home">
-    <h1>{SITE.title}</h1>
-    <p class="lede">{SITE.description}</p>
-
-    <section aria-labelledby="recent-title">
-      <h2 id="recent-title">最近更新</h2>
-      <ArticleList entries={recent} />
+  <div class="dashboard">
+    <section class="hero" aria-labelledby="home-title">
+      <h1 id="home-title" class="wordmark">TOBY<span aria-hidden="true">.</span></h1>
+      <p class="kind">Engineering Worklog</p>
+      <p class="focus">
+        {
+          SITE.focus.map((id, i) => (
+            <>
+              {i > 0 && <span class="sep" aria-hidden="true"> · </span>}
+              {countIn(id) > 0 ? <a href={topicUrl(id)}>{title(id)}</a> : <span>{title(id)}</span>}
+            </>
+          ))
+        }
+      </p>
+      <button class="search-entry" type="button" data-search-open data-search-pending>
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+          <circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8"></circle>
+          <path d="m16 16 4.5 4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path>
+        </svg>
+        <span>搜索全部内容：标题、正文、命令、报错信息</span>
+        <kbd data-search-shortcut>⌘K</kbd>
+      </button>
     </section>
+
+    <dl class="stats">
+      {
+        stats.map((s) => (
+          <div>
+            <dt>{s.label}</dt>
+            <dd>{s.url ? <a href={s.url}>{s.value}</a> : s.value}</dd>
+          </div>
+        ))
+      }
+    </dl>
+
+    {
+      investigating.length > 0 && (
+        <section class="open" aria-labelledby="open-title" data-status="investigating">
+          <h2 id="open-title">{STATUS_LABEL.investigating}（{investigating.length}）</h2>
+          <ArticleList entries={investigating} />
+        </section>
+      )
+    }
+
+    <div class="columns">
+      <section class="recent" aria-labelledby="recent-title">
+        <div class="section-head">
+          <h2 id="recent-title">最近更新</h2>
+          <a href="/archive/">全部归档</a>
+        </div>
+        <ArticleList entries={articles.slice(0, 6)} />
+      </section>
+
+      <aside class="side">
+        <section aria-labelledby="knowledge-title">
+          <div class="section-head">
+            <h2 id="knowledge-title">Knowledge</h2>
+            <a href="/knowledge/">全部</a>
+          </div>
+          <ul class="index">
+            {
+              knowledgeTopics.map(({ id, count }) => (
+                <li>
+                  <a href={topicUrl(id)}>{title(id)}</a>
+                  <span>{count}</span>
+                </li>
+              ))
+            }
+          </ul>
+        </section>
+
+        <section aria-labelledby="projects-title">
+          <div class="section-head">
+            <h2 id="projects-title">Projects</h2>
+            <a href="/projects/">全部</a>
+          </div>
+          <ul class="index">
+            {
+              projectRows.map(({ project, count }) => (
+                <li>
+                  <a href={`/projects/${project.id}/`}>{project.data.title}</a>
+                  <span>{count}</span>
+                </li>
+              ))
+            }
+          </ul>
+        </section>
+      </aside>
+    </div>
   </div>
 </BaseLayout>
 
 <style>
-  .home {
-    max-width: var(--measure);
+  .dashboard {
+    max-width: 62rem;
   }
 
-  h1 {
-    margin: 0 0 0.5rem;
-    font-size: var(--text-3xl);
-    font-weight: 650;
-    letter-spacing: -0.02em;
+  /* Hero: the wordmark is the page's one bold element. */
+  .hero {
+    padding: 0.5rem 0 2.5rem;
   }
 
-  .lede {
-    margin: 0 0 3rem;
+  .wordmark {
+    margin: 0;
+    font-size: clamp(3.5rem, 9vw, 6rem);
+    font-weight: 700;
+    line-height: 0.95;
+    letter-spacing: -0.045em;
+  }
+
+  .wordmark span {
+    color: var(--accent);
+  }
+
+  .kind {
+    margin: 0.75rem 0 0.35rem;
+    font-size: var(--text-xl);
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+
+  .focus {
+    margin: 0 0 2rem;
+    color: var(--ink-3);
+  }
+
+  .focus a {
     color: var(--ink-2);
-    font-size: var(--text-lg);
-    line-height: 1.6;
+    text-decoration: underline;
+    text-decoration-color: var(--border);
+    text-underline-offset: 0.25em;
+  }
+
+  .focus a:hover {
+    color: var(--accent);
+  }
+
+  .sep {
+    color: var(--ink-3);
+  }
+
+  .search-entry {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: min(100%, 36rem);
+    height: 3.25rem;
+    padding: 0 0.75rem 0 1rem;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--surface) 65%, transparent);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    color: var(--ink-3);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .search-entry span {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .search-entry:hover {
+    border-color: var(--ink-3);
+    color: var(--ink-2);
+  }
+
+  kbd {
+    padding: 0.05rem 0.4rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    font: inherit;
+    font-size: var(--text-xs);
+  }
+
+  /* Stats: one hairline-divided row, not a row of cards. */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+    margin: 0 0 3rem;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .stats div {
+    padding: 0.9rem 1rem 1rem;
+  }
+
+  .stats div + div {
+    border-left: 1px solid var(--border);
+  }
+
+  .stats dt {
+    margin-bottom: 0.2rem;
+    color: var(--ink-3);
+    font-size: var(--text-sm);
+  }
+
+  .stats dd {
+    margin: 0;
+    font-size: var(--text-xl);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+  }
+
+  .stats dd a {
+    text-decoration: none;
+  }
+
+  .stats dd a:hover {
+    color: var(--accent);
+  }
+
+  .open {
+    margin: 0 0 3rem;
+    padding-left: 1rem;
+    border-left: 3px solid var(--status-color);
+  }
+
+  .columns {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(14rem, 1fr);
+    gap: 3rem;
+  }
+
+  .side {
+    display: flex;
+    flex-direction: column;
+    gap: 2.5rem;
+  }
+
+  .section-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
   }
 
   h2 {
-    margin: 0 0 0.75rem;
-    font-size: var(--text-sm);
+    margin: 0;
+    font-size: var(--text-base);
     font-weight: 600;
+  }
+
+  .open h2 {
+    margin-bottom: 0.75rem;
+  }
+
+  .section-head a {
     color: var(--ink-3);
+    font-size: var(--text-sm);
+    text-decoration: none;
+  }
+
+  .section-head a:hover {
+    color: var(--accent);
+  }
+
+  .index {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border-top: 1px solid var(--border);
+  }
+
+  .index li {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.6rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .index a {
+    font-weight: 500;
+    text-decoration: none;
+  }
+
+  .index a:hover {
+    color: var(--accent);
+  }
+
+  .index span {
+    color: var(--ink-3);
+    font-size: var(--text-sm);
+    font-variant-numeric: tabular-nums;
+  }
+
+  @media (max-width: 1100px) {
+    .columns {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  @media (max-width: 560px) {
+    .stats {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .stats div + div {
+      border-left: 0;
+    }
+    .stats div:nth-child(even) {
+      border-left: 1px solid var(--border);
+    }
+    .stats div:nth-child(n + 3) {
+      border-top: 1px solid var(--border);
+    }
   }
 </style>

@@ -58,6 +58,11 @@ const items = headings.filter((h) => h.depth === 2 || h.depth === 3);
         if (h.getBoundingClientRect().top - line <= 1) current = h.id;
         else break;
       }
+      // At the bottom of the page the last sections can never reach the line.
+      const root = document.documentElement;
+      if (root.scrollTop > 0 && innerHeight + root.scrollTop >= root.scrollHeight - 2) {
+        current = headings[headings.length - 1].id;
+      }
       if (current === active) return;
       active = current;
       for (const a of links) {

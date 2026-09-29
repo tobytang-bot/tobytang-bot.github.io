@@ -3,6 +3,8 @@ import "../styles/global.css";
 import Header from "../components/Header.astro";
 import Sidebar from "../components/Sidebar.astro";
 import { SITE } from "../site";
+// Preloading the Latin subset avoids a layout shift when the web font swaps in.
+import plexLatin from "@fontsource-variable/ibm-plex-sans/files/ibm-plex-sans-latin-wght-normal.woff2?url";
 
 interface ArticleMeta {
   published: Date;
@@ -42,6 +44,8 @@ const jsonLd = (data: Record<string, unknown>) =>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="preload" href={plexLatin} as="font" type="font/woff2" crossorigin />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
     {noindex ? <meta name="robots" content="noindex" /> : <link rel="canonical" href={canonical} />}
