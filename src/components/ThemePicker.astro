@@ -1,12 +1,19 @@
 ---
 // Appearance menu: a header button opening a panel with the mode
-// (follow system / light / dark), the color theme and Reduce Motion.
-// The color control looks like a discrete slider but is a radio group, so
+// (follow system / light / dark), the palette, Liquid Glass intensity and
+// Reduce Motion. There is one palette slider per scheme; only the one for the
+// scheme in use is shown, and each scheme keeps its own choice.
+// The palette control looks like a discrete slider but is a radio group, so
 // screen readers announce theme names: arrows move and select, Home/End jump
 // to the ends. Dragging across it previews each theme and saves on release;
 // discrete changes crossfade (see theme-manager.ts).
 // State and storage live in src/lib/theme-manager.ts.
-import { COLOR_THEMES, DARK_THEME, MODES } from "../lib/themes";
+import { GLASS_LEVELS, MODES, THEMES } from "../lib/themes";
+
+const schemes = (["light", "dark"] as const).map((scheme) => ({
+  scheme,
+  themes: THEMES.filter((t) => t.scheme === scheme),
+}));
 ---
 
 <div class="theme-menu" data-theme-menu>
@@ -29,7 +36,7 @@ import { COLOR_THEMES, DARK_THEME, MODES } from "../lib/themes";
     <p class="title" id="theme-panel-title">外观</p>
 
     <p class="label" id="theme-mode-label">模式</p>
-    <div class="modes" role="radiogroup" aria-labelledby="theme-mode-label" data-theme-modes>
+    <div class="segmented" role="radiogroup" aria-labelledby="theme-mode-label" data-theme-modes>
       {
         MODES.map((m) => (
           <button type="button" role="radio" aria-checked="false" tabindex="-1" data-mode={m.id}>
@@ -39,29 +46,46 @@ import { COLOR_THEMES, DARK_THEME, MODES } from "../lib/themes";
       }
     </div>
 
-    <p class="label" id="theme-color-label">配色</p>
-    <div class="slider" role="radiogroup" aria-labelledby="theme-color-label" data-theme-slider>
-      <span class="track" aria-hidden="true"></span>
+    <p class="label" id="theme-palette-label">配色</p>
+    {
+      schemes.map(({ scheme, themes }) => (
+        <div
+          class="slider"
+          role="radiogroup"
+          aria-labelledby="theme-palette-label"
+          data-theme-slider={scheme}
+          hidden={scheme === "dark"}
+          style={`--stops: ${themes.length}`}
+        >
+          <span class="track" aria-hidden="true" />
+          {themes.map((t) => (
+            <button
+              type="button"
+              class="stop"
+              role="radio"
+              aria-checked="false"
+              tabindex="-1"
+              data-palette={t.id}
+              style={`--swatch: ${t.swatch}`}
+            >
+              <span class="dot" aria-hidden="true" />
+              <span class="name">{t.label}</span>
+            </button>
+          ))}
+        </div>
+      ))
+    }
+
+    <p class="label glass-label" id="theme-glass-label">玻璃强度</p>
+    <div class="segmented glass" role="radiogroup" aria-labelledby="theme-glass-label">
       {
-        COLOR_THEMES.map((t) => (
-          <button
-            type="button"
-            class="stop"
-            role="radio"
-            aria-checked="false"
-            tabindex="-1"
-            data-color={t.id}
-            style={`--swatch: ${t.swatch}`}
-          >
-            <span class="dot" aria-hidden="true" />
-            <span class="name">{t.label}</span>
+        GLASS_LEVELS.map((g) => (
+          <button type="button" role="radio" aria-checked="false" tabindex="-1" data-glass={g.id}>
+            {g.label}
           </button>
         ))
       }
     </div>
-    <p class="hint" data-theme-hint hidden>
-      深色模式使用「{DARK_THEME.label}」配色，选择一种配色将切换到浅色。
-    </p>
 
     <div class="motion">
       <span id="theme-motion-label">减少动态效果</span>
@@ -82,8 +106,15 @@ import { COLOR_THEMES, DARK_THEME, MODES } from "../lib/themes";
 </div>
 
 <script>
-  import { previewColor, setColor, setMode, setReduceMotion, subscribe } from "../lib/theme-manager";
-  import type { ColorThemeId, ThemeMode } from "../lib/themes";
+  import {
+    previewPalette,
+    setGlass,
+    setMode,
+    setPalette,
+    setReduceMotion,
+    subscribe,
+  } from "../lib/theme-manager";
+  import type { GlassLevel, Scheme, ThemeId, ThemeMode } from "../lib/themes";
 
   // Moves and selects with arrows / Home / End, like a native radio group.
   function roving(buttons: HTMLButtonElement[], select: (b: HTMLButtonElement) => void) {
@@ -114,12 +145,12 @@ import { COLOR_THEMES, DARK_THEME, MODES } from "../lib/themes";
   for (const menu of document.querySelectorAll<HTMLElement>("[data-theme-menu]")) {
     const trigger = menu.querySelector<HTMLButtonElement>("[data-theme-trigger]")!;
     const panel = menu.querySelector<HTMLElement>("[data-theme-panel]")!;
-    const slider = menu.querySelector<HTMLElement>("[data-theme-slider]")!;
-    const hint = menu.querySelector<HTMLElement>("[data-theme-hint]")!;
+    const sliders = [...menu.querySelectorAll<HTMLElement>("[data-theme-slider]")];
     const motion = menu.querySelector<HTMLButtonElement>("[data-theme-motion]")!;
     const motionHint = menu.querySelector<HTMLElement>("[data-theme-motion-hint]")!;
     const modes = [...menu.querySelectorAll<HTMLButtonElement>("[data-mode]")];
-    const stops = [...menu.querySelectorAll<HTMLButtonElement>("[data-color]")];
+    const stops = [...menu.querySelectorAll<HTMLButtonElement>("[data-palette]")];
+    const glasses = [...menu.querySelectorAll<HTMLButtonElement>("[data-glass]")];
 
     // Open / close
     const setOpen = (open: boolean) => {
@@ -144,60 +175,71 @@ import { COLOR_THEMES, DARK_THEME, MODES } from "../lib/themes";
     for (const b of modes) b.addEventListener("click", () => setMode(b.dataset.mode as ThemeMode));
     roving(modes, (b) => setMode(b.dataset.mode as ThemeMode));
 
-    // Color: click / keys save directly; dragging previews, release saves.
-    const colorOf = (b: HTMLButtonElement) => b.dataset.color as ColorThemeId;
-    for (const b of stops) b.addEventListener("click", () => setColor(colorOf(b)));
-    roving(stops, (b) => setColor(colorOf(b)));
+    // Palette: click / keys save directly; dragging previews, release saves.
+    const paletteOf = (b: HTMLButtonElement) => b.dataset.palette as ThemeId;
+    for (const slider of sliders) {
+      const own = [...slider.querySelectorAll<HTMLButtonElement>("[data-palette]")];
+      for (const b of own) b.addEventListener("click", () => setPalette(paletteOf(b)));
+      roving(own, (b) => setPalette(paletteOf(b)));
 
-    const nearest = (x: number) => {
-      let best = stops[0];
-      let bestDistance = Infinity;
-      for (const b of stops) {
-        const r = b.getBoundingClientRect();
-        const distance = Math.abs(r.left + r.width / 2 - x);
-        if (distance < bestDistance) [best, bestDistance] = [b, distance];
-      }
-      return best;
-    };
-    // A plain click isn't previewed, so saving it crossfades; once the
-    // pointer moves, previews are instant to keep up with it.
-    let dragging = false;
-    let startX = 0;
-    let moved = false;
-    slider.addEventListener("pointerdown", (e) => {
-      if (e.button !== 0) return;
-      dragging = true;
-      moved = false;
-      startX = e.clientX;
-      slider.setPointerCapture(e.pointerId);
-    });
-    slider.addEventListener("pointermove", (e) => {
-      if (!dragging) return;
-      moved ||= Math.abs(e.clientX - startX) > 4;
-      if (moved) previewColor(colorOf(nearest(e.clientX)));
-    });
-    slider.addEventListener("pointerup", (e) => {
-      if (!dragging) return;
-      dragging = false;
-      const b = nearest(e.clientX);
-      setColor(colorOf(b));
-      b.focus();
-    });
-    slider.addEventListener("pointercancel", () => {
-      dragging = false;
-      previewColor(null);
-    });
+      const nearest = (x: number) => {
+        let best = own[0];
+        let bestDistance = Infinity;
+        for (const b of own) {
+          const r = b.getBoundingClientRect();
+          const distance = Math.abs(r.left + r.width / 2 - x);
+          if (distance < bestDistance) [best, bestDistance] = [b, distance];
+        }
+        return best;
+      };
+      // A plain click isn't previewed, so saving it crossfades; once the
+      // pointer moves, previews are instant to keep up with it.
+      let dragging = false;
+      let startX = 0;
+      let moved = false;
+      slider.addEventListener("pointerdown", (e) => {
+        if (e.button !== 0) return;
+        dragging = true;
+        moved = false;
+        startX = e.clientX;
+        slider.setPointerCapture(e.pointerId);
+      });
+      slider.addEventListener("pointermove", (e) => {
+        if (!dragging) return;
+        moved ||= Math.abs(e.clientX - startX) > 4;
+        if (moved) previewPalette(paletteOf(nearest(e.clientX)));
+      });
+      slider.addEventListener("pointerup", (e) => {
+        if (!dragging) return;
+        dragging = false;
+        const b = nearest(e.clientX);
+        setPalette(paletteOf(b));
+        b.focus();
+      });
+      slider.addEventListener("pointercancel", () => {
+        dragging = false;
+        previewPalette(null);
+      });
+    }
+
+    // Glass intensity
+    for (const b of glasses) b.addEventListener("click", () => setGlass(b.dataset.glass as GlassLevel));
+    roving(glasses, (b) => setGlass(b.dataset.glass as GlassLevel));
 
     // Reduce Motion
     motion.addEventListener("click", () => setReduceMotion(motion.ariaChecked !== "true"));
 
     subscribe((state) => {
       check(modes, modes.find((b) => b.dataset.mode === state.mode));
-      check(stops, stops.find((b) => b.dataset.color === state.color));
+      for (const slider of sliders) {
+        const scheme = slider.dataset.themeSlider as Scheme;
+        const own = stops.filter((b) => slider.contains(b));
+        check(own, own.find((b) => b.dataset.palette === state.palettes[scheme]));
+        slider.hidden = scheme !== state.scheme;
+      }
+      check(glasses, glasses.find((b) => b.dataset.glass === state.glass));
       // The dot under the pointer while dragging.
-      for (const b of stops) b.toggleAttribute("data-preview", b.dataset.color === state.preview);
-      slider.toggleAttribute("data-dark", state.isDark && !state.preview);
-      hint.hidden = !state.isDark;
+      for (const b of stops) b.toggleAttribute("data-preview", b.dataset.palette === state.preview);
       // A system setting can't be overridden here: show it as on and locked.
       motion.setAttribute("aria-checked", String(state.reduceMotion || state.systemReducedMotion));
       motion.disabled = state.systemReducedMotion;
@@ -258,8 +300,8 @@ import { COLOR_THEMES, DARK_THEME, MODES } from "../lib/themes";
     font-size: var(--text-xs);
   }
 
-  /* Mode: segmented control */
-  .modes {
+  /* Mode and glass intensity: segmented controls */
+  .segmented {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 2px;
@@ -269,7 +311,7 @@ import { COLOR_THEMES, DARK_THEME, MODES } from "../lib/themes";
     background: var(--surface-2);
   }
 
-  .modes button {
+  .segmented button {
     min-height: 2rem;
     padding: 0 0.25rem;
     border: 0;
@@ -281,7 +323,7 @@ import { COLOR_THEMES, DARK_THEME, MODES } from "../lib/themes";
     cursor: pointer;
   }
 
-  .modes button[aria-checked="true"] {
+  .segmented button[aria-checked="true"] {
     background: var(--surface);
     color: var(--ink);
     font-weight: 550;
@@ -293,7 +335,7 @@ import { COLOR_THEMES, DARK_THEME, MODES } from "../lib/themes";
   .slider {
     position: relative;
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(var(--stops), 1fr);
     touch-action: pan-y;
     user-select: none;
   }
@@ -301,8 +343,9 @@ import { COLOR_THEMES, DARK_THEME, MODES } from "../lib/themes";
   .track {
     position: absolute;
     top: 1.125rem;
-    left: 10%;
-    right: 10%;
+    /* From the first dot's center to the last one's. */
+    left: calc(50% / var(--stops));
+    right: calc(50% / var(--stops));
     height: 2px;
     border-radius: 1px;
     background: var(--border);
@@ -329,7 +372,7 @@ import { COLOR_THEMES, DARK_THEME, MODES } from "../lib/themes";
     height: 1.25rem;
     border-radius: 50%;
     background: var(--swatch);
-    /* Keeps light swatches visible on light panels and on slate. */
+    /* Keeps swatches visible on both light and dark panels. */
     box-shadow: inset 0 0 0 1px rgb(128 128 128 / 0.4);
     transition: transform 120ms ease;
   }
@@ -363,9 +406,8 @@ import { COLOR_THEMES, DARK_THEME, MODES } from "../lib/themes";
     mask-composite: exclude;
   }
 
-  /* In dark mode the saved color is kept but not in use. */
-  .slider[data-dark] .stop[aria-checked="true"] .dot::after {
-    opacity: 0.45;
+  .slider[hidden] {
+    display: none;
   }
 
   .name {
@@ -377,6 +419,14 @@ import { COLOR_THEMES, DARK_THEME, MODES } from "../lib/themes";
     color: var(--ink-3);
     font-size: var(--text-xs);
     line-height: 1.5;
+  }
+
+  .glass-label {
+    margin-top: 1rem;
+  }
+
+  .segmented.glass {
+    margin-bottom: 0;
   }
 
   .hint[hidden] {
@@ -403,15 +453,13 @@ import { COLOR_THEMES, DARK_THEME, MODES } from "../lib/themes";
     padding: 0;
     border: 0;
     border-radius: 999px;
-    background: var(--surface-2);
-    box-shadow: inset 0 0 0 1px var(--border);
+    background: var(--border);
     cursor: pointer;
     transition: background-color 150ms ease;
   }
 
   .switch[aria-checked="true"] {
     background: var(--accent);
-    box-shadow: none;
   }
 
   .switch:disabled {
@@ -426,12 +474,12 @@ import { COLOR_THEMES, DARK_THEME, MODES } from "../lib/themes";
     width: 1rem;
     height: 1rem;
     border-radius: 50%;
-    background: var(--surface);
-    box-shadow: 0 1px 2px rgb(0 0 0 / 0.25);
+    background: var(--ink-3);
     transition: transform 150ms ease;
   }
 
   .switch[aria-checked="true"] .knob {
+    background: var(--on-accent);
     transform: translateX(1rem);
   }
 </style>

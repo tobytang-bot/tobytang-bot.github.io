@@ -204,9 +204,8 @@ const website = {
     padding: 0 0.75rem 0 1rem;
     border: 1px solid var(--border);
     border-radius: 10px;
-    background: color-mix(in srgb, var(--surface) 65%, transparent);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: color-mix(in srgb, var(--surface) calc(100% - 35% * var(--glass-scale)), transparent);
+    backdrop-filter: blur(calc(12px * var(--glass-scale)));
     color: var(--ink-3);
     font: inherit;
     text-align: left;

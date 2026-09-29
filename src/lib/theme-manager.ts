@@ -1,28 +1,35 @@
-// Client-side appearance state: mode (system | light | dark) × color theme,
-// plus Reduce Motion.
+// Client-side appearance state: mode (system | light | dark) × one palette
+// per scheme, plus Reduce Motion and Liquid Glass intensity.
 // The head script in BaseLayout resolves the initial state before first paint
-// and records it on <html> (data-theme-mode, data-theme-color); this module
-// takes over from there. UI components only call these functions.
+// and records it on <html> (data-theme-mode, data-theme-light,
+// data-theme-dark); this module takes over from there. UI components only
+// call these functions.
 import {
-  COLOR_THEMES,
-  DARK_THEME,
-  DEFAULT_COLOR,
+  DEFAULT_GLASS,
+  DEFAULT_THEME,
+  GLASS_LEVELS,
   MODES,
   STORAGE_KEYS,
-  type ColorThemeId,
+  THEMES,
+  type GlassLevel,
+  type Scheme,
+  type ThemeId,
   type ThemeMode,
 } from "./themes";
 
 export interface ThemeState {
   mode: ThemeMode;
-  color: ColorThemeId;
-  /** Color shown in place of `color` while previewing. */
-  preview: ColorThemeId | null;
-  isDark: boolean;
+  /** Scheme in use: from the mode, or the system setting when following it. */
+  scheme: Scheme;
+  /** Saved palette for each scheme. */
+  palettes: Record<Scheme, ThemeId>;
+  /** Palette shown in place of the saved one while previewing. */
+  preview: ThemeId | null;
   /** Reduce Motion turned on in the panel. */
   reduceMotion: boolean;
   /** Reduced motion requested by the operating system. */
   systemReducedMotion: boolean;
+  glass: GlassLevel;
 }
 
 const root = document.documentElement;
@@ -32,30 +39,41 @@ const meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')
 const listeners = new Set<(state: ThemeState) => void>();
 
 const isMode = (v: unknown): v is ThemeMode => MODES.some((m) => m.id === v);
-const isColor = (v: unknown): v is ColorThemeId => COLOR_THEMES.some((t) => t.id === v);
+const isGlass = (v: unknown): v is GlassLevel => GLASS_LEVELS.some((g) => g.id === v);
+const themeOf = (id: unknown) => THEMES.find((t) => t.id === id);
+const paletteFor = (scheme: Scheme, v: unknown): ThemeId =>
+  themeOf(v)?.scheme === scheme ? (v as ThemeId) : DEFAULT_THEME[scheme];
 
 let mode: ThemeMode = isMode(root.dataset.themeMode) ? root.dataset.themeMode : "system";
-let color: ColorThemeId = isColor(root.dataset.themeColor) ? root.dataset.themeColor : DEFAULT_COLOR;
-let preview: ColorThemeId | null = null;
+const palettes: Record<Scheme, ThemeId> = {
+  light: paletteFor("light", root.dataset.themeLight),
+  dark: paletteFor("dark", root.dataset.themeDark),
+};
+let preview: ThemeId | null = null;
 let reduceMotion = root.dataset.motion === "reduce";
+let glass: GlassLevel = isGlass(root.dataset.glass) ? root.dataset.glass : DEFAULT_GLASS;
 
-const isDark = () => mode === "dark" || (mode === "system" && media.matches);
+const scheme = (): Scheme =>
+  mode === "dark" || (mode === "system" && media.matches) ? "dark" : "light";
 
 export const getState = (): ThemeState => ({
   mode,
-  color,
+  scheme: scheme(),
+  palettes: { ...palettes },
   preview,
-  isDark: isDark(),
   reduceMotion,
   systemReducedMotion: motionMedia.matches,
+  glass,
 });
 
 function save() {
   try {
     localStorage.setItem(STORAGE_KEYS.mode, mode);
-    localStorage.setItem(STORAGE_KEYS.color, color);
+    localStorage.setItem(STORAGE_KEYS.light, palettes.light);
+    localStorage.setItem(STORAGE_KEYS.dark, palettes.dark);
     if (reduceMotion) localStorage.setItem(STORAGE_KEYS.motion, "reduce");
     else localStorage.removeItem(STORAGE_KEYS.motion);
+    localStorage.setItem(STORAGE_KEYS.glass, glass);
   } catch {
     // Storage unavailable (private mode): the choice lasts for this page only.
   }
@@ -74,22 +92,19 @@ function transition(update: () => void) {
 
 /** `animate`: crossfade if the palette changes (not while previewing a drag). */
 function apply(animate = false) {
-  const dark = isDark() && !preview;
-  const id = dark ? DARK_THEME.id : (preview ?? color);
-  if (animate && id !== root.dataset.theme) {
-    transition(() => render(id, dark));
-  } else {
-    render(id, dark);
-  }
+  const current = scheme();
+  const theme = themeOf(preview ?? palettes[current])!;
+  const update = () => {
+    root.dataset.theme = theme.id;
+    root.dataset.scheme = theme.scheme;
+    root.dataset.themeMode = mode;
+    root.dataset.themeLight = palettes.light;
+    root.dataset.themeDark = palettes.dark;
+    meta?.setAttribute("content", theme.bg);
+  };
+  if (animate && theme.id !== root.dataset.theme) transition(update);
+  else update();
   notify();
-}
-
-function render(id: string, dark: boolean) {
-  root.dataset.theme = id;
-  root.dataset.scheme = dark ? "dark" : "light";
-  root.dataset.themeMode = mode;
-  root.dataset.themeColor = color;
-  meta?.setAttribute("content", dark ? DARK_THEME.bg : COLOR_THEMES.find((t) => t.id === id)!.bg);
 }
 
 export function setMode(next: ThemeMode) {
@@ -99,18 +114,20 @@ export function setMode(next: ThemeMode) {
   apply(true);
 }
 
-/** Color themes are light palettes: choosing one while dark switches to light. */
-export function setColor(next: ColorThemeId) {
-  color = next;
+/** Saves a palette for its own scheme; it shows if that scheme is in use. */
+export function setPalette(next: ThemeId) {
+  const theme = themeOf(next);
+  if (!theme) return;
+  palettes[theme.scheme] = next;
   preview = null;
-  if (isDark()) mode = "light";
   save();
   apply(true);
 }
 
-/** Shows a color without saving it; `null` restores the saved theme. */
-export function previewColor(next: ColorThemeId | null) {
+/** Shows a palette of the current scheme without saving it; `null` restores the saved one. */
+export function previewPalette(next: ThemeId | null) {
   if (next === preview) return;
+  if (next && themeOf(next)?.scheme !== scheme()) return;
   preview = next;
   apply();
 }
@@ -119,6 +136,15 @@ export function setReduceMotion(next: boolean) {
   reduceMotion = next;
   if (next) root.dataset.motion = "reduce";
   else delete root.dataset.motion;
+  save();
+  notify();
+}
+
+export function setGlass(next: GlassLevel) {
+  glass = next;
+  // medium is the base look in tokens.css, so it needs no attribute.
+  if (next === DEFAULT_GLASS) delete root.dataset.glass;
+  else root.dataset.glass = next;
   save();
   notify();
 }

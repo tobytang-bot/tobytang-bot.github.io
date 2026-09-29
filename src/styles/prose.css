@@ -130,7 +130,7 @@
   font-weight: var(--shiki-light-font-weight);
 }
 
-/* The dark theme (slate) uses the dark Shiki palette. */
+/* Dark themes (cocoa, deepsea, pine) use the dark Shiki palette. */
 :root[data-scheme="dark"] .astro-code span {
   color: var(--shiki-dark);
   font-style: var(--shiki-dark-font-style);

@@ -149,9 +149,8 @@ const items = headings.filter((h) => h.depth === 2 || h.depth === 3);
     padding: 1rem 1rem 1rem 1.1rem;
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    background: color-mix(in srgb, var(--surface) 60%, transparent);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    background: color-mix(in srgb, var(--surface) calc(100% - 40% * var(--glass-scale)), transparent);
+    backdrop-filter: blur(calc(10px * var(--glass-scale)));
     font-size: var(--text-sm);
   }
 

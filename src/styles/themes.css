@@ -1,31 +1,10 @@
-/* Color themes. Light palettes: ivory, sage, mist, lavender, sand (the
-   reader's color choice); dark palette: slate. The head script sets
-   data-theme (palette) and data-scheme (dark | light) before first paint.
-   Without JS, mist is the default and the fallback at the bottom follows a
-   dark system setting with slate.
-   Every text/background pair is checked by scripts/check-contrast.mjs. */
+/* Color themes. Light: ivory, sage, sand. Dark: cocoa, deepsea, pine.
+   The reader picks one per scheme; the head script sets data-theme (palette)
+   and data-scheme (dark | light) before first paint. Without JS, ivory is the
+   default and the fallback at the bottom follows a dark system setting with
+   deepsea. Every text/background pair is checked by scripts/check-contrast.mjs. */
 
 :root,
-:root[data-theme="mist"] {
-  color-scheme: light;
-  --bg: #eef2f5;
-  --surface: #f7f9fa;
-  --surface-2: #e6ebee;
-  --border: #dce2e6;
-  --ink: #30373d;
-  --ink-2: #485057;
-  --ink-3: #606971;
-  --accent: #5a6f7f;
-  --accent-soft: #e2e8ec;
-  --on-accent: #ffffff;
-  --code-bg: #fafbfc;
-  --glass: rgb(238 242 245 / 0.72);
-  --status-investigating: #8a560c;
-  --status-solved: #16703c;
-  --status-reference: #2359b8;
-  --status-deprecated: #606971;
-}
-
 :root[data-theme="ivory"] {
   color-scheme: light;
   --bg: #f7f6f2;
@@ -39,7 +18,6 @@
   --accent-soft: #e5eae2;
   --on-accent: #ffffff;
   --code-bg: #fdfdfb;
-  --glass: rgb(247 246 242 / 0.72);
   --status-investigating: #8a560c;
   --status-solved: #16703c;
   --status-reference: #2359b8;
@@ -59,31 +37,10 @@
   --accent-soft: #e1e9e1;
   --on-accent: #ffffff;
   --code-bg: #fafbfa;
-  --glass: rgb(238 242 236 / 0.72);
   --status-investigating: #8a560c;
   --status-solved: #16703c;
   --status-reference: #2359b8;
   --status-deprecated: #616a63;
-}
-
-:root[data-theme="lavender"] {
-  color-scheme: light;
-  --bg: #f3f0f5;
-  --surface: #faf8fb;
-  --surface-2: #ece8ee;
-  --border: #e4dee7;
-  --ink: #38333c;
-  --ink-2: #524c56;
-  --ink-3: #6b656f;
-  --accent: #756783;
-  --accent-soft: #e8e4ec;
-  --on-accent: #ffffff;
-  --code-bg: #fcfbfd;
-  --glass: rgb(243 240 245 / 0.72);
-  --status-investigating: #8a560c;
-  --status-solved: #16703c;
-  --status-reference: #2359b8;
-  --status-deprecated: #6b656f;
 }
 
 :root[data-theme="sand"] {
@@ -99,52 +56,87 @@
   --accent-soft: #ece5dc;
   --on-accent: #ffffff;
   --code-bg: #fcfbf8;
-  --glass: rgb(244 240 232 / 0.72);
   --status-investigating: #8a560c;
   --status-solved: #16703c;
   --status-reference: #2359b8;
   --status-deprecated: #6d675f;
 }
 
-:root[data-theme="slate"] {
+:root[data-theme="cocoa"] {
   color-scheme: dark;
-  --bg: #202326;
-  --surface: #282c30;
-  --surface-2: #2f3337;
-  --border: #383d41;
-  --ink: #d8dad9;
-  --ink-2: #a8adaa;
-  --ink-3: #999d9c;
-  --accent: #8ca89a;
-  --accent-soft: #363d3f;
-  --on-accent: #1b1e21;
-  --code-bg: #24282b;
-  --glass: rgb(32 35 38 / 0.72);
+  --bg: #221e1a;
+  --surface: #2a2520;
+  --surface-2: #312c27;
+  --border: #3c3731;
+  --ink: #e0d7ca;
+  --ink-2: #b3a896;
+  --ink-3: #9e9484;
+  --accent: #c9a57a;
+  --accent-soft: #40372d;
+  --on-accent: #1b1815;
+  --code-bg: #26221d;
   --status-investigating: #e0a44a;
   --status-solved: #4cc07f;
   --status-reference: #6b9df0;
-  --status-deprecated: #999d9c;
+  --status-deprecated: #9e9484;
 }
 
-/* No-JS fallback: follow a dark system setting with slate. Keep in sync with slate above. */
+:root[data-theme="deepsea"] {
+  color-scheme: dark;
+  --bg: #1a1f26;
+  --surface: #212831;
+  --surface-2: #282f38;
+  --border: #333a43;
+  --ink: #d6dde5;
+  --ink-2: #a2adb9;
+  --ink-3: #8e98a3;
+  --accent: #8aaccc;
+  --accent-soft: #303a47;
+  --on-accent: #15191e;
+  --code-bg: #1e242c;
+  --status-investigating: #e0a44a;
+  --status-solved: #4cc07f;
+  --status-reference: #6b9df0;
+  --status-deprecated: #8e98a3;
+}
+
+:root[data-theme="pine"] {
+  color-scheme: dark;
+  --bg: #1b2420;
+  --surface: #222c27;
+  --surface-2: #29332e;
+  --border: #343e39;
+  --ink: #d4ddd7;
+  --ink-2: #a0aea5;
+  --ink-3: #909d95;
+  --accent: #86b596;
+  --accent-soft: #303f37;
+  --on-accent: #161d1a;
+  --code-bg: #1f2824;
+  --status-investigating: #e0a44a;
+  --status-solved: #4cc07f;
+  --status-reference: #6b9df0;
+  --status-deprecated: #909d95;
+}
+
+/* No-JS fallback: follow a dark system setting with deepsea. Keep in sync with deepsea above. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme]) {
     color-scheme: dark;
-    --bg: #202326;
-    --surface: #282c30;
-    --surface-2: #2f3337;
-    --border: #383d41;
-    --ink: #d8dad9;
-    --ink-2: #a8adaa;
-    --ink-3: #999d9c;
-    --accent: #8ca89a;
-    --accent-soft: #363d3f;
-    --on-accent: #1b1e21;
-    --code-bg: #24282b;
-    --glass: rgb(32 35 38 / 0.72);
+    --bg: #1a1f26;
+    --surface: #212831;
+    --surface-2: #282f38;
+    --border: #333a43;
+    --ink: #d6dde5;
+    --ink-2: #a2adb9;
+    --ink-3: #8e98a3;
+    --accent: #8aaccc;
+    --accent-soft: #303a47;
+    --on-accent: #15191e;
+    --code-bg: #1e242c;
     --status-investigating: #e0a44a;
     --status-solved: #4cc07f;
     --status-reference: #6b9df0;
-    --status-deprecated: #999d9c;
+    --status-deprecated: #8e98a3;
   }
 }

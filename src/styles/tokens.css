@@ -23,6 +23,21 @@
   --radius-sm: 4px;
   --radius: 8px;
 
+  /* Liquid Glass intensity, set by the appearance panel (data-glass).
+     Each glass surface scales its blur and transparency by this factor;
+     medium (1) is the base look. */
+  --glass-scale: 1;
+  /* Header fill: --bg, 28% transparent at medium. */
+  --glass: color-mix(in srgb, var(--bg) calc(100% - 28% * var(--glass-scale)), transparent);
+
   /* Liquid Glass rim, used as the selected-theme ring. */
   --rim-gradient: linear-gradient(135deg, #71b7ff, #916bff 50%, #ff71dc);
+}
+
+:root[data-glass="low"] {
+  --glass-scale: 0.4;
+}
+
+:root[data-glass="high"] {
+  --glass-scale: 1.6;
 }
