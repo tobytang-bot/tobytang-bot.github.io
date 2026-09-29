@@ -1,17 +1,15 @@
 name: CI
 
-# PR #1: build and type/schema check only. Deployment is added at cutover (Phase 5).
+# Build and type/schema check for pull requests; pushes to main are covered by deploy.yml.
 on:
-  push:
-    branches: [astro-site]
   pull_request:
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
