@@ -130,21 +130,22 @@
   font-weight: var(--shiki-light-font-weight);
 }
 
-:root[data-theme="dark"] .astro-code span {
+/* Dark themes (midnight, graphite) share the dark Shiki palette. */
+:root[data-scheme="dark"] .astro-code span {
   color: var(--shiki-dark);
   font-style: var(--shiki-dark-font-style);
   font-weight: var(--shiki-dark-font-weight);
 }
 
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .astro-code span {
+  :root:not([data-scheme]) .astro-code span {
     color: var(--shiki-dark);
     font-style: var(--shiki-dark-font-style);
     font-weight: var(--shiki-dark-font-weight);
   }
 }
 
-/* Copy button, added by CodeCopy script */
+/* Copy button, added by ProseEnhance */
 .code-block {
   position: relative;
 }

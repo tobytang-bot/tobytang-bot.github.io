@@ -6,7 +6,8 @@ Target: `https://tobytang-bot.github.io/`. Architecture: [docs/architecture-asse
 ```sh
 npm install
 npm run dev      # http://localhost:4321
-npm run build    # astro check + static build to dist/ + Pagefind search index
+npm run build    # contrast check + astro check + static build to dist/ + Pagefind search index
+npm run check:contrast  # WCAG AA check for every theme in src/styles/themes.css
 npm run preview  # serve dist/ (search works here, not in `npm run dev`)
 ```
 

@@ -1,0 +1,204 @@
+---
+// Theme picker: four swatches from dark to light, read as one bar.
+// Semantically a radio group (not <progress>/<input type=range>): arrows move
+// and select, Home/End jump to the ends. The ↺ button returns to the system
+// setting; it only shows once the reader has picked a theme.
+import { THEMES } from "../lib/themes";
+---
+
+<div class="theme-picker" data-theme-picker>
+  <div class="bar" role="radiogroup" aria-label="主题（由深到浅）">
+    {
+      THEMES.map((t) => (
+        <button
+          type="button"
+          class="swatch"
+          role="radio"
+          aria-checked="false"
+          aria-label={t.label}
+          title={t.label}
+          tabindex="-1"
+          data-theme-option={t.id}
+          data-scheme={t.scheme}
+          data-bg={t.bg}
+          style={`--swatch: ${t.bg}`}
+        />
+      ))
+    }
+  </div>
+  <button type="button" class="auto" aria-label="跟随系统" title="跟随系统" data-theme-follow-system hidden>
+    <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
+      <path
+        d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3M4.5 4v4h4"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.8"
+        stroke-linecap="round"
+        stroke-linejoin="round"></path>
+    </svg>
+  </button>
+</div>
+
+<script>
+  import { SYSTEM_THEME } from "../lib/themes";
+
+  const root = document.documentElement;
+  const media = window.matchMedia("(prefers-color-scheme: dark)");
+  // Query inside pickers only: <html> itself carries data-theme-* attributes.
+  const pickers = [...document.querySelectorAll<HTMLElement>("[data-theme-picker]")];
+  const radios = pickers.flatMap((p) => [
+    ...p.querySelectorAll<HTMLButtonElement>("[data-theme-option]"),
+  ]);
+  const autoButtons = pickers.flatMap((p) => [
+    ...p.querySelectorAll<HTMLButtonElement>("[data-theme-follow-system]"),
+  ]);
+  const meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
+
+  const store = (value: string | null) => {
+    try {
+      if (value) localStorage.setItem("theme", value);
+      else localStorage.removeItem("theme");
+    } catch {
+      // Storage unavailable (private mode): the choice lasts for this page only.
+    }
+  };
+
+  function apply(id: string) {
+    const option = radios.find((r) => r.dataset.themeOption === id);
+    if (!option) return;
+    root.dataset.theme = id;
+    root.dataset.scheme = option.dataset.scheme;
+    meta?.setAttribute("content", option.dataset.bg!);
+    sync();
+  }
+
+  function sync() {
+    const auto = "themeAuto" in root.dataset;
+    for (const r of radios) {
+      const checked = r.dataset.themeOption === root.dataset.theme;
+      r.setAttribute("aria-checked", String(checked));
+      r.tabIndex = checked ? 0 : -1;
+    }
+    for (const b of autoButtons) b.hidden = auto;
+  }
+
+  function choose(id: string) {
+    delete root.dataset.themeAuto;
+    store(id);
+    apply(id);
+  }
+
+  const systemTheme = () => SYSTEM_THEME[media.matches ? "dark" : "light"];
+
+  radios.forEach((radio, i) => {
+    radio.addEventListener("click", () => choose(radio.dataset.themeOption!));
+    radio.addEventListener("keydown", (e) => {
+      const last = radios.length - 1;
+      const next =
+        e.key === "ArrowRight" || e.key === "ArrowDown" ? (i === last ? 0 : i + 1)
+        : e.key === "ArrowLeft" || e.key === "ArrowUp" ? (i === 0 ? last : i - 1)
+        : e.key === "Home" ? 0
+        : e.key === "End" ? last
+        : -1;
+      if (next < 0) return;
+      e.preventDefault();
+      choose(radios[next].dataset.themeOption!);
+      radios[next].focus();
+    });
+  });
+
+  for (const button of autoButtons) {
+    button.addEventListener("click", () => {
+      root.dataset.themeAuto = "";
+      store(null);
+      apply(systemTheme());
+      radios.find((r) => r.tabIndex === 0)?.focus();
+    });
+  }
+
+  media.addEventListener("change", () => {
+    if ("themeAuto" in root.dataset) apply(systemTheme());
+  });
+
+  sync();
+</script>
+
+<style>
+  .theme-picker {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  /* Four swatches joined into one bar, darkest on the left. */
+  .bar {
+    display: inline-flex;
+    gap: 2px;
+    padding: 2px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+  }
+
+  .swatch {
+    position: relative;
+    width: 18px;
+    height: 16px;
+    padding: 0;
+    border: 0;
+    border-radius: 3px;
+    background: var(--swatch);
+    /* Keeps light swatches visible on light headers and dark ones on dark. */
+    box-shadow: inset 0 0 0 1px rgb(128 128 128 / 0.35);
+    cursor: pointer;
+  }
+
+  .swatch:first-child {
+    border-radius: 6px 3px 3px 6px;
+  }
+
+  .swatch:last-child {
+    border-radius: 3px 6px 6px 3px;
+  }
+
+  /* Selected: Liquid Glass rim gradient ring. */
+  .swatch[aria-checked="true"]::after {
+    content: "";
+    position: absolute;
+    inset: -3px;
+    padding: 2px;
+    border-radius: inherit;
+    background: var(--rim-gradient);
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  .swatch:focus-visible {
+    outline-offset: 4px;
+  }
+
+  .auto {
+    display: inline-grid;
+    place-items: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius);
+    background: none;
+    color: var(--ink-3);
+    cursor: pointer;
+  }
+
+  .auto[hidden] {
+    display: none;
+  }
+
+  .auto:hover {
+    color: var(--ink);
+  }
+</style>
