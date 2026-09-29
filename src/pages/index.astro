@@ -2,17 +2,23 @@
 import BaseLayout from "../layouts/BaseLayout.astro";
 import ArticleList from "../components/ArticleList.astro";
 import { getArticles } from "../lib/content";
+import { SITE } from "../site";
 
 const recent = (await getArticles()).slice(0, 10);
+const website = {
+  "@type": "WebSite",
+  name: SITE.title,
+  description: SITE.description,
+  url: new URL("/", Astro.site).href,
+  inLanguage: SITE.lang,
+  author: { "@type": "Person", name: SITE.author.name, url: SITE.author.url },
+};
 ---
 
-<BaseLayout
-  title="Toby Worklog"
-  description="Magento、Cloud、PHP、DevOps 与 AI 工作流的工作日志、知识库和问题解决记录。"
->
+<BaseLayout title={SITE.title} structuredData={[website]}>
   <div class="home">
-    <h1>Toby Worklog</h1>
-    <p class="lede">Magento、Cloud、PHP、DevOps 与 AI 工作流的工作日志、知识库和问题解决记录。</p>
+    <h1>{SITE.title}</h1>
+    <p class="lede">{SITE.description}</p>
 
     <section aria-labelledby="recent-title">
       <h2 id="recent-title">最近更新</h2>

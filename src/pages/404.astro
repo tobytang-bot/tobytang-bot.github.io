@@ -1,0 +1,101 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+const sections = [
+  { title: "Worklog", url: "/worklog/", note: "按日期记录的工作日志" },
+  { title: "Knowledge", url: "/knowledge/", note: "长期有效的知识整理" },
+  { title: "Topics", url: "/topics/", note: "按技术主题浏览" },
+  { title: "Archive", url: "/archive/", note: "按年月查看全部 Worklog" },
+];
+---
+
+<BaseLayout title="找不到页面" description="这个地址没有对应的页面。" noindex>
+  <div class="not-found">
+    <p class="code">404</p>
+    <h1>找不到这个页面</h1>
+    <p class="lede">
+      地址可能拼错了，或者文章已经移动。可以按 <kbd>/</kbd> 搜索，或从下面的栏目重新找。
+    </p>
+    <ul>
+      {
+        sections.map((s) => (
+          <li>
+            <a href={s.url}>{s.title}</a>
+            <span>{s.note}</span>
+          </li>
+        ))
+      }
+    </ul>
+    <p class="home"><a href="/">回到首页</a></p>
+  </div>
+</BaseLayout>
+
+<style>
+  .not-found {
+    max-width: var(--measure);
+  }
+
+  .code {
+    margin: 0 0 0.5rem;
+    color: var(--ink-3);
+    font-size: var(--text-sm);
+    font-variant-numeric: tabular-nums;
+  }
+
+  h1 {
+    margin: 0 0 0.5rem;
+    font-size: var(--text-3xl);
+    font-weight: 650;
+    letter-spacing: -0.02em;
+  }
+
+  .lede {
+    margin: 0 0 2rem;
+    color: var(--ink-2);
+    font-size: var(--text-lg);
+    line-height: 1.6;
+  }
+
+  kbd {
+    padding: 0 0.35rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    font: inherit;
+    font-size: 0.85em;
+  }
+
+  ul {
+    margin: 0 0 2rem;
+    padding: 0;
+    list-style: none;
+    border-top: 1px solid var(--border);
+  }
+
+  li {
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+    padding: 0.8rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  li a {
+    min-width: 6.5rem;
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  li a:hover,
+  .home a:hover {
+    color: var(--accent);
+  }
+
+  li span {
+    color: var(--ink-3);
+    font-size: var(--text-sm);
+  }
+
+  .home a {
+    color: var(--ink-2);
+  }
+</style>

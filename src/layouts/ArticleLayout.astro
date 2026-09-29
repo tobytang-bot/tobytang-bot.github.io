@@ -6,7 +6,8 @@ import ArticleFooter from "../components/ArticleFooter.astro";
 import ProseEnhance from "../components/ProseEnhance.astro";
 import StatusBadge from "../components/StatusBadge.astro";
 import Toc from "../components/Toc.astro";
-import { isoDate, type Article } from "../lib/content";
+import { articleUrl, isoDate, type Article } from "../lib/content";
+import { SITE } from "../site";
 import { COLLECTION_LABEL, STATUS_LABEL } from "../lib/status";
 import { ancestry, getTopics, topicUrl } from "../lib/topics";
 
@@ -37,9 +38,44 @@ const searchMeta = [
   `status:${status}`,
   `type:${COLLECTION_LABEL[entry.collection]}`,
 ];
+
+// SEO: Open Graph article fields and schema.org structured data.
+const section = COLLECTION_LABEL[entry.collection];
+const keywords = [...topics.map((t) => t.data.title), ...tags];
+const url = new URL(articleUrl(entry), Astro.site).href;
+const home = new URL("/", Astro.site).href;
+const structuredData = [
+  {
+    "@type": "TechArticle",
+    headline: title,
+    description,
+    url,
+    mainEntityOfPage: url,
+    datePublished: isoDate(date),
+    dateModified: isoDate(updated ?? date),
+    inLanguage: SITE.lang,
+    articleSection: section,
+    keywords: keywords.join(", "),
+    author: { "@type": "Person", name: SITE.author.name, url: SITE.author.url },
+    isPartOf: { "@type": "WebSite", name: SITE.title, url: home },
+  },
+  {
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { name: SITE.title, item: home },
+      { name: section, item: new URL(`/${entry.collection}/`, Astro.site).href },
+      { name: title, item: url },
+    ].map((crumb, i) => ({ "@type": "ListItem", position: i + 1, ...crumb })),
+  },
+];
 ---
 
-<BaseLayout title={title} description={description}>
+<BaseLayout
+  title={title}
+  description={description}
+  article={{ published: date, modified: updated, section, tags: keywords }}
+  structuredData={structuredData}
+>
   <article class="article" data-pagefind-body>
     <div hidden>
       {filters.map((f) => <span data-pagefind-filter={f} />)}

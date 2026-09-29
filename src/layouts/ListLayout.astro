@@ -1,5 +1,6 @@
 ---
 import BaseLayout from "./BaseLayout.astro";
+import { SITE } from "../site";
 
 interface Crumb {
   title: string;
@@ -14,9 +15,23 @@ interface Props {
 }
 
 const { title, description, crumbs = [] } = Astro.props;
+
+const breadcrumb = {
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    { name: SITE.title, url: "/" },
+    ...crumbs.map((c) => ({ name: c.title, url: c.url })),
+    { name: title, url: Astro.url.pathname },
+  ].map((c, i) => ({
+    "@type": "ListItem",
+    position: i + 1,
+    name: c.name,
+    item: new URL(c.url, Astro.site).href,
+  })),
+};
 ---
 
-<BaseLayout title={title} description={description}>
+<BaseLayout title={title} description={description} structuredData={[breadcrumb]}>
   <div class="page">
     {
       crumbs.length > 0 && (

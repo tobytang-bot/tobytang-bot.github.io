@@ -1,10 +1,12 @@
 // @ts-check
 import { defineConfig } from "astro/config";
+import sitemap from "./src/integrations/sitemap.mjs";
 
 export default defineConfig({
   site: "https://tobytang-bot.github.io",
   base: "/",
   trailingSlash: "always",
+  integrations: [sitemap()],
 
   markdown: {
     shikiConfig: {
