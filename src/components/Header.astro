@@ -19,6 +19,7 @@ import ThemePicker from "./ThemePicker.astro";
     </button>
 
     <a class="wordmark" href="/">
+      <img class="wordmark-logo" src="/logo.png" alt="" width="32" height="32" />
       <span class="wordmark-name">Toby</span>
       <span class="wordmark-kind">Worklog</span>
     </a>
@@ -53,11 +54,18 @@ import ThemePicker from "./ThemePicker.astro";
 
   .wordmark {
     display: inline-flex;
-    align-items: baseline;
+    align-items: center;
     gap: 0.35rem;
     text-decoration: none;
     font-size: 1.05rem;
     letter-spacing: -0.01em;
+  }
+
+  .wordmark-logo {
+    width: 2rem;
+    height: 2rem;
+    margin-right: 0.15rem;
+    border-radius: 50%;
   }
 
   .wordmark-name {
