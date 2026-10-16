@@ -56,7 +56,9 @@ const website = {
 <BaseLayout title={SITE.title} structuredData={[website]}>
   <div class="dashboard">
     <section class="hero" aria-labelledby="home-title">
-      <h1 id="home-title" class="wordmark">TOBY<span aria-hidden="true">.</span></h1>
+      <h1 id="home-title" class="wordmark">
+        <img src="/avatar.png" alt="TOBY" width="144" height="144" />
+      </h1>
       <p class="kind">Engineering Worklog</p>
       <p class="focus">
         {
@@ -158,14 +160,13 @@ const website = {
 
   .wordmark {
     margin: 0;
-    font-size: clamp(3.5rem, 9vw, 6rem);
-    font-weight: 700;
-    line-height: 0.95;
-    letter-spacing: -0.045em;
+    line-height: 0;
   }
 
-  .wordmark span {
-    color: var(--accent);
+  .wordmark img {
+    width: clamp(6rem, 16vw, 9rem);
+    height: auto;
+    border-radius: 50%;
   }
 
   .kind {
