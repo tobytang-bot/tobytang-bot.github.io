@@ -1,5 +1,6 @@
 ---
 import "../styles/global.css";
+import "../styles/content-motion.css";
 import Header from "../components/Header.astro";
 import Sidebar from "../components/Sidebar.astro";
 import { SITE } from "../site";
@@ -89,7 +90,7 @@ const jsonLd = (data: Record<string, unknown>) =>
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
     {structuredData.map((data) => <script type="application/ld+json" set:html={jsonLd(data)} />)}
-    <meta name="theme-color" content="#f7f6f2" />
+    <meta name="theme-color" content="#f4f0e8" />
     <script is:inline define:vars={{ themeInit }}>
       // Runs before first paint: resolve mode × palette (plus Reduce Motion
       // and Glass Intensity) from storage and the system setting.
@@ -114,7 +115,7 @@ const jsonLd = (data: Record<string, unknown>) =>
           localStorage.removeItem(legacyKey); // migrate the previous theme picker
         }
       } catch {}
-      // Unknown or removed palettes (e.g. mist, lavender, slate) fall back to the defaults.
+      // Unknown or removed palettes (e.g. ivory, sage, cocoa, pine) fall back to the defaults.
       const valid = (id, scheme) => Object.hasOwn(themes, id) && themes[id][0] === scheme;
       if (mode !== "light" && mode !== "dark") mode = "system";
       if (!valid(light, "light")) light = defaults.light;
@@ -148,6 +149,11 @@ const jsonLd = (data: Record<string, unknown>) =>
     </div>
   </body>
 </html>
+
+<script>
+  import { initReveals } from "../lib/motion/reveal";
+  initReveals();
+</script>
 
 <style>
   .shell {

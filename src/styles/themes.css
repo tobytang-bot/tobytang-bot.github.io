@@ -1,48 +1,10 @@
-/* Color themes. Light: ivory, sage, sand. Dark: cocoa, deepsea, pine.
-   The reader picks one per scheme; the head script sets data-theme (palette)
-   and data-scheme (dark | light) before first paint. Without JS, ivory is the
-   default and the fallback at the bottom follows a dark system setting with
-   deepsea. Every text/background pair is checked by scripts/check-contrast.mjs. */
+/* Color themes: one per scheme. Light: sand (暖沙). Dark: deepsea (深海).
+   The head script sets data-theme (palette) and data-scheme (dark | light)
+   before first paint. Without JS, sand is the default and the fallback at the
+   bottom follows a dark system setting with deepsea. Every text/background
+   pair is checked by scripts/check-contrast.mjs. */
 
 :root,
-:root[data-theme="ivory"] {
-  color-scheme: light;
-  --bg: #f7f6f2;
-  --surface: #fcfbf8;
-  --surface-2: #efeeea;
-  --border: #e2e0d9;
-  --ink: #2f312f;
-  --ink-2: #4c4e4b;
-  --ink-3: #686a67;
-  --accent: #5b765f;
-  --accent-soft: #e5eae2;
-  --on-accent: #ffffff;
-  --code-bg: #fdfdfb;
-  --status-investigating: #8a560c;
-  --status-solved: #16703c;
-  --status-reference: #2359b8;
-  --status-deprecated: #686a67;
-}
-
-:root[data-theme="sage"] {
-  color-scheme: light;
-  --bg: #eef2ec;
-  --surface: #f7f9f6;
-  --surface-2: #e6ebe5;
-  --border: #dce4da;
-  --ink: #2f3831;
-  --ink-2: #48514a;
-  --ink-3: #616a63;
-  --accent: #59725d;
-  --accent-soft: #e1e9e1;
-  --on-accent: #ffffff;
-  --code-bg: #fafbfa;
-  --status-investigating: #8a560c;
-  --status-solved: #16703c;
-  --status-reference: #2359b8;
-  --status-deprecated: #616a63;
-}
-
 :root[data-theme="sand"] {
   color-scheme: light;
   --bg: #f4f0e8;
@@ -62,25 +24,6 @@
   --status-deprecated: #6d675f;
 }
 
-:root[data-theme="cocoa"] {
-  color-scheme: dark;
-  --bg: #221e1a;
-  --surface: #2a2520;
-  --surface-2: #312c27;
-  --border: #3c3731;
-  --ink: #e0d7ca;
-  --ink-2: #b3a896;
-  --ink-3: #9e9484;
-  --accent: #c9a57a;
-  --accent-soft: #40372d;
-  --on-accent: #1b1815;
-  --code-bg: #26221d;
-  --status-investigating: #e0a44a;
-  --status-solved: #4cc07f;
-  --status-reference: #6b9df0;
-  --status-deprecated: #9e9484;
-}
-
 :root[data-theme="deepsea"] {
   color-scheme: dark;
   --bg: #1a1f26;
@@ -98,25 +41,6 @@
   --status-solved: #4cc07f;
   --status-reference: #6b9df0;
   --status-deprecated: #8e98a3;
-}
-
-:root[data-theme="pine"] {
-  color-scheme: dark;
-  --bg: #1b2420;
-  --surface: #222c27;
-  --surface-2: #29332e;
-  --border: #343e39;
-  --ink: #d4ddd7;
-  --ink-2: #a0aea5;
-  --ink-3: #909d95;
-  --accent: #86b596;
-  --accent-soft: #303f37;
-  --on-accent: #161d1a;
-  --code-bg: #1f2824;
-  --status-investigating: #e0a44a;
-  --status-solved: #4cc07f;
-  --status-reference: #6b9df0;
-  --status-deprecated: #909d95;
 }
 
 /* No-JS fallback: follow a dark system setting with deepsea. Keep in sync with deepsea above. */

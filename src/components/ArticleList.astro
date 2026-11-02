@@ -22,7 +22,7 @@ const shownDate = (e: Article) => isoDate(date === "date" ? e.data.date : lastMo
   ) : (
     <ol class="list">
       {entries.map((entry) => (
-        <li>
+        <li data-reveal>
           <a href={articleUrl(entry)}>{entry.data.title}</a>
           <p>{entry.data.description}</p>
           <div class="row">

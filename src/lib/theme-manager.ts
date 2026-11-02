@@ -1,5 +1,5 @@
-// Client-side appearance state: mode (system | light | dark) × one palette
-// per scheme, plus Reduce Motion and Liquid Glass intensity.
+// Client-side appearance state: mode (system | light | dark), which picks the
+// single palette of that scheme, plus Reduce Motion and Liquid Glass intensity.
 // The head script in BaseLayout resolves the initial state before first paint
 // and records it on <html> (data-theme-mode, data-theme-light,
 // data-theme-dark); this module takes over from there. UI components only
@@ -23,8 +23,6 @@ export interface ThemeState {
   scheme: Scheme;
   /** Saved palette for each scheme. */
   palettes: Record<Scheme, ThemeId>;
-  /** Palette shown in place of the saved one while previewing. */
-  preview: ThemeId | null;
   /** Reduce Motion turned on in the panel. */
   reduceMotion: boolean;
   /** Reduced motion requested by the operating system. */
@@ -49,7 +47,6 @@ const palettes: Record<Scheme, ThemeId> = {
   light: paletteFor("light", root.dataset.themeLight),
   dark: paletteFor("dark", root.dataset.themeDark),
 };
-let preview: ThemeId | null = null;
 let reduceMotion = root.dataset.motion === "reduce";
 let glass: GlassLevel = isGlass(root.dataset.glass) ? root.dataset.glass : DEFAULT_GLASS;
 
@@ -60,7 +57,6 @@ export const getState = (): ThemeState => ({
   mode,
   scheme: scheme(),
   palettes: { ...palettes },
-  preview,
   reduceMotion,
   systemReducedMotion: motionMedia.matches,
   glass,
@@ -90,10 +86,9 @@ function transition(update: () => void) {
   else document.startViewTransition(update);
 }
 
-/** `animate`: crossfade if the palette changes (not while previewing a drag). */
+/** `animate`: crossfade if the palette changes. */
 function apply(animate = false) {
-  const current = scheme();
-  const theme = themeOf(preview ?? palettes[current])!;
+  const theme = themeOf(palettes[scheme()])!;
   const update = () => {
     root.dataset.theme = theme.id;
     root.dataset.scheme = theme.scheme;
@@ -109,27 +104,8 @@ function apply(animate = false) {
 
 export function setMode(next: ThemeMode) {
   mode = next;
-  preview = null;
   save();
   apply(true);
-}
-
-/** Saves a palette for its own scheme; it shows if that scheme is in use. */
-export function setPalette(next: ThemeId) {
-  const theme = themeOf(next);
-  if (!theme) return;
-  palettes[theme.scheme] = next;
-  preview = null;
-  save();
-  apply(true);
-}
-
-/** Shows a palette of the current scheme without saving it; `null` restores the saved one. */
-export function previewPalette(next: ThemeId | null) {
-  if (next === preview) return;
-  if (next && themeOf(next)?.scheme !== scheme()) return;
-  preview = next;
-  apply();
 }
 
 export function setReduceMotion(next: boolean) {

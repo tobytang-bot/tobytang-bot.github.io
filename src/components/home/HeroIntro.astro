@@ -1,0 +1,37 @@
+---
+import HeroGraph from "./HeroGraph.astro";
+import type { GraphTopic } from "../../lib/motion/graph-data";
+import "../../styles/home-hero.css";
+
+interface Props {
+  focus: { label: string; href?: string }[];
+  nodes: GraphTopic[];
+}
+const { focus, nodes } = Astro.props;
+---
+
+<section class="home-hero" aria-labelledby="home-title">
+  <div class="hero-intro">
+    <h1 id="home-title" class="wordmark">
+      <img src="/avatar.png" alt="TOBY" width="144" height="144" />
+    </h1>
+    <p class="kind">Engineering Worklog</p>
+    <p class="focus">
+      {focus.map((item, i) => (
+        <>
+          {i > 0 && <span class="sep" aria-hidden="true"> · </span>}
+          {item.href ? <a href={item.href}>{item.label}</a> : <span>{item.label}</span>}
+        </>
+      ))}
+    </p>
+    <button class="search-entry" type="button" data-search-open data-search-pending>
+      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+        <circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8"></circle>
+        <path d="m16 16 4.5 4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path>
+      </svg>
+      <span>搜索全部内容：标题、正文、命令、报错信息</span>
+      <kbd data-search-shortcut>⌘K</kbd>
+    </button>
+  </div>
+  <HeroGraph nodes={nodes} />
+</section>

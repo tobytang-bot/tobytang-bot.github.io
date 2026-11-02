@@ -2,6 +2,8 @@
 import { getCollection } from "astro:content";
 import BaseLayout from "../layouts/BaseLayout.astro";
 import ArticleList from "../components/ArticleList.astro";
+import HeroIntro from "../components/home/HeroIntro.astro";
+import { graphTopics } from "../lib/motion/graph-data";
 import { articleUrl, getArticles, isoDate, lastModified } from "../lib/content";
 import { STATUS_LABEL } from "../lib/status";
 import { getResources } from "../lib/resources";
@@ -19,12 +21,14 @@ const investigating = articles.filter((a) => a.data.status === "investigating");
 
 const title = (id: string) => topics.get(id)?.data.title ?? id;
 const countIn = (id: string) => inTopic(id, articles, topics).length;
+// 分类页按文章 + 资源生成，链接是否可用需与路由使用同一口径。
+const hasTopicPage = (id: string) => inTopic(id, [...articles, ...resources], topics).length > 0;
 
 const stats = [
   { label: "全部文章", value: String(articles.length), url: "/archive/" },
   ...SITE.featuredTopics.map((id) => {
     const n = countIn(id);
-    return { label: title(id), value: String(n), url: n > 0 ? topicUrl(id) : undefined };
+    return { label: title(id), value: String(n), url: hasTopicPage(id) ? topicUrl(id) : undefined };
   }),
   { label: "资源", value: String(resources.length), url: "/resources/" },
   {
@@ -55,30 +59,7 @@ const website = {
 
 <BaseLayout title={SITE.title} structuredData={[website]}>
   <div class="dashboard">
-    <section class="hero" aria-labelledby="home-title">
-      <h1 id="home-title" class="wordmark">
-        <img src="/avatar.png" alt="TOBY" width="144" height="144" />
-      </h1>
-      <p class="kind">Engineering Worklog</p>
-      <p class="focus">
-        {
-          SITE.focus.map((id, i) => (
-            <>
-              {i > 0 && <span class="sep" aria-hidden="true"> · </span>}
-              {countIn(id) > 0 ? <a href={topicUrl(id)}>{title(id)}</a> : <span>{title(id)}</span>}
-            </>
-          ))
-        }
-      </p>
-      <button class="search-entry" type="button" data-search-open data-search-pending>
-        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-          <circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8"></circle>
-          <path d="m16 16 4.5 4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path>
-        </svg>
-        <span>搜索全部内容：标题、正文、命令、报错信息</span>
-        <kbd data-search-shortcut>⌘K</kbd>
-      </button>
-    </section>
+    <HeroIntro focus={SITE.focus.map((id) => ({ label: title(id), href: hasTopicPage(id) ? topicUrl(id) : undefined }))} nodes={graphTopics(topics, [...articles, ...resources])} />
 
     <dl class="stats">
       {
@@ -101,7 +82,7 @@ const website = {
     }
 
     <div class="columns">
-      <section class="recent" aria-labelledby="recent-title">
+      <section class="recent" aria-labelledby="recent-title" data-reveal>
         <div class="section-head">
           <h2 id="recent-title">最近更新</h2>
           <a href="/archive/">全部归档</a>
@@ -110,7 +91,7 @@ const website = {
       </section>
 
       <aside class="side">
-        <section aria-labelledby="knowledge-title">
+        <section aria-labelledby="knowledge-title" data-reveal>
           <div class="section-head">
             <h2 id="knowledge-title">Knowledge</h2>
             <a href="/knowledge/">全部</a>
@@ -127,7 +108,7 @@ const website = {
           </ul>
         </section>
 
-        <section aria-labelledby="projects-title">
+        <section aria-labelledby="projects-title" data-reveal>
           <div class="section-head">
             <h2 id="projects-title">Projects</h2>
             <a href="/projects/">全部</a>
@@ -151,87 +132,6 @@ const website = {
 <style>
   .dashboard {
     max-width: 62rem;
-  }
-
-  /* Hero: the wordmark is the page's one bold element. */
-  .hero {
-    padding: 0.5rem 0 2.5rem;
-  }
-
-  .wordmark {
-    margin: 0;
-    line-height: 0;
-  }
-
-  .wordmark img {
-    width: clamp(6rem, 16vw, 9rem);
-    height: auto;
-    border-radius: 50%;
-  }
-
-  .kind {
-    margin: 0.75rem 0 0.35rem;
-    font-size: var(--text-xl);
-    font-weight: 500;
-    letter-spacing: -0.01em;
-  }
-
-  .focus {
-    margin: 0 0 2rem;
-    color: var(--ink-3);
-  }
-
-  .focus a {
-    color: var(--ink-2);
-    text-decoration: underline;
-    text-decoration-color: var(--border);
-    text-underline-offset: 0.25em;
-  }
-
-  .focus a:hover {
-    color: var(--accent);
-  }
-
-  .sep {
-    color: var(--ink-3);
-  }
-
-  .search-entry {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    width: min(100%, 36rem);
-    height: 3.25rem;
-    padding: 0 0.75rem 0 1rem;
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    background: color-mix(in srgb, var(--surface) calc(100% - 35% * var(--glass-scale)), transparent);
-    backdrop-filter: blur(calc(12px * var(--glass-scale)));
-    color: var(--ink-3);
-    font: inherit;
-    text-align: left;
-    cursor: pointer;
-  }
-
-  .search-entry span {
-    flex: 1;
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .search-entry:hover {
-    border-color: var(--ink-3);
-    color: var(--ink-2);
-  }
-
-  kbd {
-    padding: 0.05rem 0.4rem;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    font: inherit;
-    font-size: var(--text-xs);
   }
 
   /* Stats: one hairline-divided row, not a row of cards. */

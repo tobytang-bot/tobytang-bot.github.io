@@ -1,0 +1,20 @@
+/* 支持离散过渡的浏览器在关闭后保留短暂的顶层淡出；其他浏览器立即关闭。 */
+dialog[data-search-dialog] {
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 160ms ease, transform 160ms ease, display 160ms allow-discrete, overlay 160ms allow-discrete;
+}
+dialog[data-search-dialog][open] {
+  opacity: 1;
+  transform: translateY(0);
+}
+@starting-style {
+  dialog[data-search-dialog][open] {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  dialog[data-search-dialog] { transition: none; transform: none; }
+}
+:root[data-motion="reduce"] dialog[data-search-dialog] { transition: none; transform: none; }
