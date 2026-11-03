@@ -20,7 +20,7 @@ export default function sitemap() {
         const normalise = (p) => `/${p}`.replace(/\/+/g, "/").replace(/\/?$/, "/");
         const excluded = new Set([...Object.keys(config.redirects ?? {}), "/404/"].map(normalise));
         const urls = [...new Set(pages.map((p) => normalise(p.pathname)))]
-          .filter((p) => !excluded.has(p))
+          .filter((p) => !excluded.has(p) && !p.startsWith("/worklog/"))
           .sort()
           .map((p) => new URL(p, config.site).href);
 

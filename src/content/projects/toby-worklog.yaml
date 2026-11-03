@@ -1,5 +1,6 @@
-title: Toby Worklog
-description: 本站的建设记录：内容模型、页面布局和部署。
+title: 个人技术站点
+description: 基于 Astro 的技术笔记与实用资源网站。
 topics:
   - astro
   - devops
+artwork: true

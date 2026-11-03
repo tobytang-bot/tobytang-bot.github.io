@@ -15,14 +15,17 @@
   --text-2xl: 1.728rem;
   --text-3xl: 2.074rem;
 
-  --header-h: 3.5rem;
-  --sidebar-w: 15.5rem;
+  --header-h: 4.5rem;
   --toc-w: 13.75rem;
   --measure: 45rem;
-  --shell-w: calc(var(--sidebar-w) + var(--measure) + 6rem + var(--toc-w) + 1.5rem);
+  --shell-w: 72rem;
   --radius-sm: 4px;
   --radius: 8px;
 
   /* Header fill: --bg, 28% transparent (Liquid Glass). */
   --glass: color-mix(in srgb, var(--bg) 72%, transparent);
+}
+
+@media (max-width: 680px) {
+  :root { --header-h: 7rem; }
 }

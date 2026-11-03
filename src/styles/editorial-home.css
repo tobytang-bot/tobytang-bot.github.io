@@ -1,0 +1,49 @@
+.editorial-home { min-width:0; }
+.hero-kicker { display:flex; align-items:center; justify-content:space-between; gap:1rem; font-size:var(--text-xs); }
+.hero-kicker p { color:var(--accent); margin:0; letter-spacing:0.1em; }
+.hero-kicker span { color:var(--ink-3); }
+.hero-heading { display:flex; align-items:center; justify-content:space-between; gap:2rem; padding:1.5rem 0 2rem; }
+.hero-heading h1 { margin:0; font-size:clamp(2.5rem,5vw,4rem); line-height:1.15; letter-spacing:-0.045em; font-weight:600; }
+.hero-heading h1 span { color:var(--accent); }
+.hero-heading p { margin:0; border-left:1px solid var(--border); padding-left:1.5rem; color:var(--ink-3); font-size:var(--text-sm); line-height:1.9; }
+.topic-ribbon { display:flex; align-items:center; flex-wrap:wrap; gap:0.35rem 1rem; padding:0.85rem 0; border-block:1px solid var(--border); }
+.topic-ribbon>span { font-size:var(--text-xs); color:var(--ink-3); margin-right:0.5rem; }
+.topic-ribbon a { display:inline-flex; align-items:center; gap:0.5rem; min-height:2rem; padding:0.2rem 0.5rem; font-family:var(--font-mono); font-size:var(--text-xs); color:var(--accent); text-decoration:none; }
+.topic-ribbon a::before { content:""; width:5px; height:5px; border-radius:50%; background:currentColor; }
+.topic-ribbon a:hover { background:var(--accent-soft); }
+.topic-ribbon a[aria-current="true"] { color:var(--on-accent); background:var(--accent); }
+.editorial-columns { display:grid; grid-template-columns:minmax(0,1.6fr) minmax(0,1fr); gap:3rem; margin-top:2rem; }
+.editorial-columns section,.editorial-columns aside { min-width:0; }
+.editorial-section-head { display:flex; justify-content:space-between; align-items:baseline; gap:1rem; margin-bottom:0.5rem; }
+.editorial-section-head h2 { margin:0; font-size:var(--text-lg); font-weight:600; letter-spacing:-0.02em; }
+.editorial-section-head h2 span { color:var(--accent); font:var(--text-xs) var(--font-mono); margin-right:0.75rem; }
+.editorial-section-head>span { font-size:var(--text-xs); color:var(--ink-3); white-space:nowrap; }
+.topic-reset { padding:0.35rem 0.6rem; border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--surface); color:var(--accent); font:inherit; font-size:var(--text-xs); cursor:pointer; }
+.topic-reset[hidden],.topic-empty[hidden] { display:none; }
+.topic-empty { color:var(--ink-3); padding:2rem 0; }
+.all-articles { display:inline-block; margin-top:1.25rem; font-size:var(--text-sm); color:var(--accent); text-underline-offset:0.25em; }
+.feature-card { position:relative; padding:1.25rem; margin-top:1rem; border-top:2px solid var(--accent); background:var(--surface-2); }
+.feature-label { margin:0; color:var(--ink-3); font-size:var(--text-xs); letter-spacing:0.04em; }
+.feature-card h3 { margin:0.65rem 0 0.4rem; font-size:var(--text-lg); font-weight:550; line-height:1.4; }
+.feature-card h3 a { text-decoration:none; }
+.feature-card h3 a::after { content:""; position:absolute; inset:0; }
+.feature-card:has(a:hover) h3 { color:var(--accent); }
+.feature-description { margin:0; color:var(--ink-3); font-size:var(--text-sm); }
+.feature-tags { display:flex; flex-wrap:wrap; gap:0.4rem 0.75rem; padding:0; margin:1rem 0 0; list-style:none; font-size:var(--text-xs); color:var(--ink-3); }
+.feature-tags li+li { padding-left:0.75rem; border-left:1px solid var(--border); }
+.site-art { display:flex; align-items:center; justify-content:space-between; gap:1rem; min-height:6rem; padding:1rem; margin-top:0.9rem; background:var(--accent); color:var(--on-accent); }
+.site-art span { font:2.75rem/1 var(--font-mono); letter-spacing:-0.08em; }
+.site-art small { max-width:7rem; font:var(--text-xs)/1.7 var(--font-mono); text-align:right; }
+@media(max-width:800px) {
+  .editorial-columns { grid-template-columns:minmax(0,1fr); gap:2.5rem; }
+  .hero-heading h1 { font-size:3rem; }
+}
+@media(max-width:480px) {
+  .hero-kicker span { display:none; }
+  .hero-heading { align-items:start; flex-direction:column; gap:1rem; padding:1.5rem 0; }
+  .hero-heading h1 { font-size:2.6rem; }
+  .hero-heading p { border:0; padding:0; }
+  .topic-ribbon { gap:0.25rem 0.4rem; }
+  .topic-ribbon>span { flex-basis:100%; }
+}
+@media(pointer:coarse) { .topic-ribbon a,.topic-reset { min-height:44px; } }

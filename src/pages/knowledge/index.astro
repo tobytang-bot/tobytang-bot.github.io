@@ -16,10 +16,11 @@ const groups = [...new Set(knowledge.map((k) => k.id.split("/")[0]))]
   .sort((a, b) => a.title.localeCompare(b.title, "zh-CN"));
 ---
 
-<ListLayout title="Knowledge" description="长期有效的知识整理：教程、最佳实践和技术总结。">
+<ListLayout title="文章" description="长期有效的知识整理：教程、最佳实践和技术总结。">
+  <nav class="browse" aria-label="文章浏览方式"><a href="/topics/">按主题浏览</a><a href="/archive/">按时间归档</a></nav>
   {
     groups.length === 0 ? (
-      <ArticleList entries={[]} empty="还没有 Knowledge 文章。" />
+      <ArticleList entries={[]} empty="还没有技术文章。" />
     ) : (
       groups.map((group) => (
         <section>
@@ -34,6 +35,7 @@ const groups = [...new Set(knowledge.map((k) => k.id.split("/")[0]))]
 </ListLayout>
 
 <style>
+  .browse { display:flex; flex-wrap:wrap; gap:1.5rem; padding-bottom:1rem; border-bottom:1px solid var(--border); font-size:var(--text-sm); color:var(--accent); }
   h2 a {
     text-decoration: none;
   }

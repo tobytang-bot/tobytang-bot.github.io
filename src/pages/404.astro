@@ -1,12 +1,6 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
-
-const sections = [
-  { title: "Worklog", url: "/worklog/", note: "按日期记录的工作日志" },
-  { title: "Knowledge", url: "/knowledge/", note: "长期有效的知识整理" },
-  { title: "Topics", url: "/topics/", note: "按技术主题浏览" },
-  { title: "Archive", url: "/archive/", note: "按年月查看全部 Worklog" },
-];
+import { NAV } from "../site";
 ---
 
 <BaseLayout title="找不到页面" description="这个地址没有对应的页面。" noindex>
@@ -18,7 +12,7 @@ const sections = [
     </p>
     <ul>
       {
-        sections.map((s) => (
+        NAV.map((s) => (
           <li>
             <a href={s.url}>{s.title}</a>
             <span>{s.note}</span>

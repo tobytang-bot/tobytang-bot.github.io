@@ -10,9 +10,11 @@ interface Props {
   showCollection?: boolean;
   /** Shown when there are no entries. */
   empty?: string;
+  /** 首页使用完整祖先分类 ID 做本地筛选，其他列表不绑定筛选行为。 */
+  topicIds?: Record<string, string[]>;
 }
 
-const { entries, date = "modified", showCollection = true, empty = "还没有文章。" } = Astro.props;
+const { entries, date = "modified", showCollection = true, empty = "还没有文章。", topicIds } = Astro.props;
 const shownDate = (e: Article) => isoDate(date === "date" ? e.data.date : lastModified(e));
 ---
 
@@ -22,13 +24,13 @@ const shownDate = (e: Article) => isoDate(date === "date" ? e.data.date : lastMo
   ) : (
     <ol class="list">
       {entries.map((entry) => (
-        <li data-reveal>
+        <li data-reveal data-home-topics={topicIds?.[entry.id]?.join(" ")}>
+          <time datetime={shownDate(entry)}>{shownDate(entry)}</time>
           <a href={articleUrl(entry)}>{entry.data.title}</a>
           <p>{entry.data.description}</p>
           <div class="row">
             <StatusBadge status={entry.data.status} />
             {showCollection && <span>{COLLECTION_LABEL[entry.collection]}</span>}
-            <time datetime={shownDate(entry)}>{shownDate(entry)}</time>
           </div>
         </li>
       ))}
@@ -41,17 +43,19 @@ const shownDate = (e: Article) => isoDate(date === "date" ? e.data.date : lastMo
     margin: 0;
     padding: 0;
     list-style: none;
-    border-top: 1px solid var(--border);
   }
 
   li {
-    padding: 1.1rem 0;
+    padding: 1.3rem 0;
     border-bottom: 1px solid var(--border);
   }
 
+  li[hidden] { display: none; }
+  time { display:block; margin-bottom:0.4rem; font-family:var(--font-mono); font-size:var(--text-xs); color:var(--ink-3); }
+
   a {
     font-size: var(--text-lg);
-    font-weight: 600;
+    font-weight: 550;
     line-height: 1.4;
     text-decoration: none;
   }
@@ -62,7 +66,8 @@ const shownDate = (e: Article) => isoDate(date === "date" ? e.data.date : lastMo
 
   p {
     margin: 0.3rem 0 0.5rem;
-    color: var(--ink-2);
+    color: var(--ink-3);
+    font-size: var(--text-sm);
     line-height: 1.6;
   }
 

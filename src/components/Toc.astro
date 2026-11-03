@@ -139,18 +139,14 @@ const items = headings.filter((h) => h.depth === 2 || h.depth === 3);
     color: var(--ink);
   }
 
-  /* Aside: sticky glass card in the right column */
+  /* 目录只保留细线层级，避免抢占文章的视觉重点。 */
   .toc-aside {
     position: sticky;
     top: calc(var(--header-h) + 1.5rem);
     max-height: calc(100dvh - var(--header-h) - 3rem);
     overflow-y: auto;
     scrollbar-width: thin;
-    padding: 1rem 1rem 1rem 1.1rem;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    background: color-mix(in srgb, var(--surface) 60%, transparent);
-    backdrop-filter: blur(10px);
+    padding: 0.25rem 0 1rem 0.5rem;
     font-size: var(--text-sm);
   }
 

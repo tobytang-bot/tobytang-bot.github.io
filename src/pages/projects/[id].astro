@@ -4,7 +4,8 @@ import { getCollection, getEntries, type CollectionEntry } from "astro:content";
 import ListLayout from "../../layouts/ListLayout.astro";
 import ArticleList from "../../components/ArticleList.astro";
 import { getArticles } from "../../lib/content";
-import { topicUrl } from "../../lib/topics";
+import { getResources } from "../../lib/resources";
+import { getTopics, inTopic, topicUrl } from "../../lib/topics";
 
 export const getStaticPaths = (async () => {
   const projects = await getCollection("projects");
@@ -12,10 +13,12 @@ export const getStaticPaths = (async () => {
 }) satisfies GetStaticPaths;
 
 const { project } = Astro.props as { project: CollectionEntry<"projects"> };
-const entries = (await getArticles()).filter((a) => a.data.project?.id === project.id);
-const worklogs = entries.filter((e) => e.collection === "worklog");
-const knowledge = entries.filter((e) => e.collection === "knowledge");
-const topics = await getEntries(project.data.topics);
+const [articles, resources, allTopics, projectTopics] = await Promise.all([
+  getArticles(), getResources(), getTopics(), getEntries(project.data.topics),
+]);
+const entries = articles.filter((a) => a.data.project?.id === project.id);
+const tagged = [...articles, ...resources];
+const topics = projectTopics.filter((topic) => inTopic(topic.id, tagged, allTopics).length > 0);
 ---
 
 <ListLayout
@@ -36,12 +39,8 @@ const topics = await getEntries(project.data.topics);
   }
 
   <section>
-    <h2>Worklog</h2>
-    <ArticleList entries={worklogs} date="date" showCollection={false} empty="这个项目还没有 Worklog。" />
-  </section>
-  <section>
-    <h2>Knowledge</h2>
-    <ArticleList entries={knowledge} showCollection={false} empty="这个项目还没有 Knowledge 文章。" />
+    <h2>技术笔记</h2>
+    <ArticleList entries={entries} showCollection={false} empty="这个项目还没有公开技术笔记。" />
   </section>
 </ListLayout>
 

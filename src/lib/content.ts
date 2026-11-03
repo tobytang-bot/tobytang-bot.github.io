@@ -52,9 +52,9 @@ export async function getKnowledge(): Promise<Knowledge[]> {
   return (await getCollection("knowledge", published)).sort(byModifiedDesc);
 }
 
-/** Every published article, most recently modified first. */
+/** 公开站点仅展示知识笔记；工作记录保留在仓库中。 */
 export async function getArticles(): Promise<Article[]> {
-  return [...(await getWorklogs()), ...(await getKnowledge())].sort(byModifiedDesc);
+  return getKnowledge();
 }
 
 /** Older / newer neighbour within the same collection, by `date`. */

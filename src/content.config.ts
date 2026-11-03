@@ -34,6 +34,8 @@ const projects = defineCollection({
     title: z.string(),
     description: z.string(),
     topics: z.array(reference("topics")).default([]),
+    /** Shows the site artwork on the home page card. */
+    artwork: z.boolean().default(false),
   }),
 });
 

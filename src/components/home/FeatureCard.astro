@@ -1,0 +1,19 @@
+---
+interface Props {
+  title: string;
+  description: string;
+  href: string;
+  label: string;
+  tags: string[];
+  site?: boolean;
+}
+const { title, description, href, label, tags, site = false } = Astro.props;
+---
+
+<article class="feature-card" data-reveal>
+  <p class="feature-label">{label}</p>
+  {site && <div class="site-art" aria-hidden="true"><span>T/B</span><small>BUILD · WRITE · REPEAT</small></div>}
+  <h3><a href={href}>{title}<span aria-hidden="true"> ↗</span></a></h3>
+  <p class="feature-description">{description}</p>
+  <ul class="feature-tags" aria-label="相关信息">{tags.map((tag) => <li>{tag}</li>)}</ul>
+</article>

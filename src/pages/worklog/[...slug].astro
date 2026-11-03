@@ -1,7 +1,7 @@
 ---
 import type { GetStaticPaths } from "astro";
-import ArticleLayout from "../../layouts/ArticleLayout.astro";
 import { getWorklogs, worklogSlug, type Worklog } from "../../lib/content";
+import { SITE } from "../../site";
 
 export const getStaticPaths = (async () => {
   const entries = await getWorklogs();
@@ -12,6 +12,7 @@ export const getStaticPaths = (async () => {
 }) satisfies GetStaticPaths;
 
 const { entry } = Astro.props as { entry: Worklog };
+// filePath keeps the real extension (.md or .mdx); the id has none.
+const file = entry.filePath ?? `src/content/worklog/${entry.id}.md`;
+return Astro.redirect(`${SITE.repository}/blob/main/${file}`);
 ---
-
-<ArticleLayout entry={entry} />

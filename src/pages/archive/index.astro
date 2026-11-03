@@ -1,24 +1,24 @@
 ---
 import ListLayout from "../../layouts/ListLayout.astro";
-import { articleUrl, getWorklogs, isoDate, type Worklog } from "../../lib/content";
+import { articleUrl, getArticles, isoDate, type Article } from "../../lib/content";
 
-const worklogs = await getWorklogs();
+const articles = (await getArticles()).sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
 
-// year → month → entries, newest first (getWorklogs is already sorted by date desc).
-const years = new Map<number, Map<number, Worklog[]>>();
-for (const w of worklogs) {
+// 按发布日期从新到旧，归入年月目录。
+const years = new Map<number, Map<number, Article[]>>();
+for (const w of articles) {
   const y = w.data.date.getUTCFullYear();
   const m = w.data.date.getUTCMonth() + 1;
-  const months = years.get(y) ?? new Map<number, Worklog[]>();
+  const months = years.get(y) ?? new Map<number, Article[]>();
   months.set(m, [...(months.get(m) ?? []), w]);
   years.set(y, months);
 }
 ---
 
-<ListLayout title="Archive" description="按年、月、日查看全部 Worklog。">
+<ListLayout title="Archive" description="按年、月、日查看全部技术笔记。">
   {
     years.size === 0 ? (
-      <p class="empty">还没有 Worklog。</p>
+      <p class="empty">还没有技术笔记。</p>
     ) : (
       [...years].map(([year, months]) => (
         <section class="year">

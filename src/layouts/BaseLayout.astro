@@ -2,7 +2,7 @@
 import "../styles/global.css";
 import "../styles/content-motion.css";
 import Header from "../components/Header.astro";
-import Sidebar from "../components/Sidebar.astro";
+import SiteFooter from "../components/SiteFooter.astro";
 import { SITE } from "../site";
 import { DEFAULT_THEME, LEGACY_KEY, LEGACY_THEME, STORAGE_KEYS, THEMES } from "../lib/themes";
 // Preloading the Latin subset avoids a layout shift when the web font swaps in.
@@ -135,7 +135,6 @@ const jsonLd = (data: Record<string, unknown>) =>
     <a class="skip-link" href="#content">跳到正文</a>
     <Header />
     <div class="shell" data-aside={hasAside ? "" : undefined}>
-      <Sidebar />
       <main id="content" class="main">
         <slot />
       </main>
@@ -147,6 +146,7 @@ const jsonLd = (data: Record<string, unknown>) =>
         )
       }
     </div>
+    <SiteFooter />
   </body>
 </html>
 
@@ -158,27 +158,31 @@ const jsonLd = (data: Record<string, unknown>) =>
 <style>
   .shell {
     display: grid;
-    grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr);
     max-width: var(--shell-w);
     margin: 0 auto;
+    padding: 0 2.5rem;
   }
 
   .shell[data-aside] {
-    grid-template-columns: var(--sidebar-w) minmax(0, 1fr) var(--toc-w);
+    grid-template-columns: minmax(0, var(--measure)) var(--toc-w);
+    gap: 3rem;
+    justify-content: center;
   }
 
   .main {
     min-width: 0;
-    padding: 2.75rem 3rem 6rem;
+    padding: 2.5rem 0 4rem;
   }
 
   .aside {
-    padding: 2.75rem 1.5rem 0 0;
+    padding: 2.75rem 0 0;
   }
 
   @media (max-width: 1199px) {
     .shell[data-aside] {
-      grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
+      grid-template-columns: minmax(0, 1fr);
+      max-width: calc(var(--measure) + 5rem);
     }
     .aside {
       display: none;
@@ -188,10 +192,10 @@ const jsonLd = (data: Record<string, unknown>) =>
   @media (max-width: 860px) {
     .shell,
     .shell[data-aside] {
-      grid-template-columns: minmax(0, 1fr);
+      padding: 0 1rem;
     }
     .main {
-      padding: 1.75rem 1rem 4rem;
+      padding: 1.75rem 0 3rem;
     }
   }
 </style>

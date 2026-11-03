@@ -3,7 +3,9 @@
 // (follow system / light 暖沙 / dark 深海). Each scheme has a single palette,
 // so there is no palette picker. Reduced motion follows the system setting.
 // State and storage live in src/lib/theme-manager.ts.
-import { MODES } from "../lib/themes";
+import { DEFAULT_THEME, MODES, THEMES } from "../lib/themes";
+const paletteLabel = (scheme: "light" | "dark") => THEMES.find((t) => t.id === DEFAULT_THEME[scheme])!.label;
+const modeLabel = (id: string) => (id === "light" || id === "dark" ? paletteLabel(id) : MODES.find((m) => m.id === id)!.label);
 ---
 
 <div class="theme-menu" data-theme-menu>
@@ -19,7 +21,8 @@ import { MODES } from "../lib/themes";
       <circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="1.8"></circle>
       <path d="M12 4a8 8 0 0 1 0 16Z" fill="currentColor"></path>
     </svg>
-    <span class="visually-hidden">外观</span>
+    <span class="theme-light">{paletteLabel("light")}</span><span class="theme-dark">{paletteLabel("dark")}</span>
+    <span class="visually-hidden">外观设置</span>
   </button>
 
   <div class="panel" id="theme-panel" role="group" aria-labelledby="theme-panel-title" hidden data-theme-panel>
@@ -30,7 +33,7 @@ import { MODES } from "../lib/themes";
       {
         MODES.map((m) => (
           <button type="button" role="radio" aria-checked="false" tabindex="-1" data-mode={m.id}>
-            {m.label}
+            {modeLabel(m.id)}
           </button>
         ))
       }
@@ -108,16 +111,26 @@ import { MODES } from "../lib/themes";
   }
 
   .trigger {
-    display: inline-grid;
-    place-items: center;
-    width: 2.25rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
     height: 2.25rem;
-    padding: 0;
-    border: 0;
+    padding: 0 0.6rem;
+    border: 1px solid var(--border);
     border-radius: var(--radius);
     background: none;
     color: var(--ink-2);
     cursor: pointer;
+    font: inherit;
+    font-size: var(--text-sm);
+  }
+
+  .theme-dark { display: none; }
+  :global(html[data-scheme="dark"]) .theme-dark { display: inline; }
+  :global(html[data-scheme="dark"]) .theme-light { display: none; }
+  @media (prefers-color-scheme: dark) {
+    :global(html:not([data-scheme]):not([data-theme])) .theme-dark { display: inline; }
+    :global(html:not([data-scheme]):not([data-theme])) .theme-light { display: none; }
   }
 
   .trigger:hover,
