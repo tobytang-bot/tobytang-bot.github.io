@@ -1,9 +1,9 @@
 ---
 // Appearance menu: a header button opening a panel with the mode
-// (follow system / light 暖沙 / dark 深海), Liquid Glass intensity and
-// Reduce Motion. Each scheme has a single palette, so there is no palette
-// picker. State and storage live in src/lib/theme-manager.ts.
-import { GLASS_LEVELS, MODES } from "../lib/themes";
+// (follow system / light 暖沙 / dark 深海). Each scheme has a single palette,
+// so there is no palette picker. Reduced motion follows the system setting.
+// State and storage live in src/lib/theme-manager.ts.
+import { MODES } from "../lib/themes";
 ---
 
 <div class="theme-menu" data-theme-menu>
@@ -35,39 +35,12 @@ import { GLASS_LEVELS, MODES } from "../lib/themes";
         ))
       }
     </div>
-
-    <p class="label" id="theme-glass-label">玻璃强度</p>
-    <div class="segmented glass" role="radiogroup" aria-labelledby="theme-glass-label">
-      {
-        GLASS_LEVELS.map((g) => (
-          <button type="button" role="radio" aria-checked="false" tabindex="-1" data-glass={g.id}>
-            {g.label}
-          </button>
-        ))
-      }
-    </div>
-
-    <div class="motion">
-      <span id="theme-motion-label">减少动态效果</span>
-      <button
-        type="button"
-        class="switch"
-        role="switch"
-        aria-checked="false"
-        aria-labelledby="theme-motion-label"
-        aria-describedby="theme-motion-hint"
-        data-theme-motion
-      >
-        <span class="knob" aria-hidden="true"></span>
-      </button>
-    </div>
-    <p class="hint" id="theme-motion-hint" data-theme-motion-hint hidden>系统已开启减少动态效果。</p>
   </div>
 </div>
 
 <script>
-  import { setGlass, setMode, setReduceMotion, subscribe } from "../lib/theme-manager";
-  import type { GlassLevel, ThemeMode } from "../lib/themes";
+  import { setMode, subscribe } from "../lib/theme-manager";
+  import type { ThemeMode } from "../lib/themes";
 
   // Moves and selects with arrows / Home / End, like a native radio group.
   function roving(buttons: HTMLButtonElement[], select: (b: HTMLButtonElement) => void) {
@@ -98,10 +71,7 @@ import { GLASS_LEVELS, MODES } from "../lib/themes";
   for (const menu of document.querySelectorAll<HTMLElement>("[data-theme-menu]")) {
     const trigger = menu.querySelector<HTMLButtonElement>("[data-theme-trigger]")!;
     const panel = menu.querySelector<HTMLElement>("[data-theme-panel]")!;
-    const motion = menu.querySelector<HTMLButtonElement>("[data-theme-motion]")!;
-    const motionHint = menu.querySelector<HTMLElement>("[data-theme-motion-hint]")!;
     const modes = [...menu.querySelectorAll<HTMLButtonElement>("[data-mode]")];
-    const glasses = [...menu.querySelectorAll<HTMLButtonElement>("[data-glass]")];
 
     // Open / close
     const setOpen = (open: boolean) => {
@@ -126,20 +96,8 @@ import { GLASS_LEVELS, MODES } from "../lib/themes";
     for (const b of modes) b.addEventListener("click", () => setMode(b.dataset.mode as ThemeMode));
     roving(modes, (b) => setMode(b.dataset.mode as ThemeMode));
 
-    // Glass intensity
-    for (const b of glasses) b.addEventListener("click", () => setGlass(b.dataset.glass as GlassLevel));
-    roving(glasses, (b) => setGlass(b.dataset.glass as GlassLevel));
-
-    // Reduce Motion
-    motion.addEventListener("click", () => setReduceMotion(motion.ariaChecked !== "true"));
-
     subscribe((state) => {
       check(modes, modes.find((b) => b.dataset.mode === state.mode));
-      check(glasses, glasses.find((b) => b.dataset.glass === state.glass));
-      // A system setting can't be overridden here: show it as on and locked.
-      motion.setAttribute("aria-checked", String(state.reduceMotion || state.systemReducedMotion));
-      motion.disabled = state.systemReducedMotion;
-      motionHint.hidden = !state.systemReducedMotion;
     });
   }
 </script>
@@ -196,12 +154,11 @@ import { GLASS_LEVELS, MODES } from "../lib/themes";
     font-size: var(--text-xs);
   }
 
-  /* Mode and glass intensity: segmented controls */
+  /* Mode: segmented control */
   .segmented {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 2px;
-    margin-bottom: 1rem;
     padding: 2px;
     border-radius: var(--radius);
     background: var(--surface-2);
@@ -224,70 +181,5 @@ import { GLASS_LEVELS, MODES } from "../lib/themes";
     color: var(--ink);
     font-weight: 550;
     box-shadow: 0 1px 2px rgb(0 0 0 / 0.12);
-  }
-
-  .hint {
-    margin: 0.6rem 0 0;
-    color: var(--ink-3);
-    font-size: var(--text-xs);
-    line-height: 1.5;
-  }
-
-  .segmented.glass {
-    margin-bottom: 0;
-  }
-
-  .hint[hidden] {
-    display: none;
-  }
-
-  /* Reduce Motion switch */
-  .motion {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.75rem;
-    margin-top: 1rem;
-    padding-top: 0.85rem;
-    border-top: 1px solid var(--border);
-    font-size: var(--text-sm);
-  }
-
-  .switch {
-    position: relative;
-    flex: none;
-    width: 2.25rem;
-    height: 1.25rem;
-    padding: 0;
-    border: 0;
-    border-radius: 999px;
-    background: var(--border);
-    cursor: pointer;
-    transition: background-color 150ms ease;
-  }
-
-  .switch[aria-checked="true"] {
-    background: var(--accent);
-  }
-
-  .switch:disabled {
-    opacity: 0.55;
-    cursor: not-allowed;
-  }
-
-  .knob {
-    position: absolute;
-    top: 2px;
-    left: 2px;
-    width: 1rem;
-    height: 1rem;
-    border-radius: 50%;
-    background: var(--ink-3);
-    transition: transform 150ms ease;
-  }
-
-  .switch[aria-checked="true"] .knob {
-    background: var(--on-accent);
-    transform: translateX(1rem);
   }
 </style>

@@ -1,12 +1,8 @@
+// 仅跟随系统的减少动态效果设置。
 export function watchMotion(update: (reduced: boolean) => void) {
   const system = matchMedia("(prefers-reduced-motion: reduce)");
-  const sync = () => update(system.matches || document.documentElement.dataset.motion === "reduce");
-  const observer = new MutationObserver(sync);
-  observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-motion"] });
+  const sync = () => update(system.matches);
   system.addEventListener("change", sync);
   sync();
-  return () => {
-    observer.disconnect();
-    system.removeEventListener("change", sync);
-  };
+  return () => system.removeEventListener("change", sync);
 }

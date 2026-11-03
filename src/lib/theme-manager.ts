@@ -1,17 +1,14 @@
 // Client-side appearance state: mode (system | light | dark), which picks the
-// single palette of that scheme, plus Reduce Motion and Liquid Glass intensity.
+// single palette of that scheme.
 // The head script in BaseLayout resolves the initial state before first paint
 // and records it on <html> (data-theme-mode, data-theme-light,
 // data-theme-dark); this module takes over from there. UI components only
 // call these functions.
 import {
-  DEFAULT_GLASS,
   DEFAULT_THEME,
-  GLASS_LEVELS,
   MODES,
   STORAGE_KEYS,
   THEMES,
-  type GlassLevel,
   type Scheme,
   type ThemeId,
   type ThemeMode,
@@ -23,11 +20,6 @@ export interface ThemeState {
   scheme: Scheme;
   /** Saved palette for each scheme. */
   palettes: Record<Scheme, ThemeId>;
-  /** Reduce Motion turned on in the panel. */
-  reduceMotion: boolean;
-  /** Reduced motion requested by the operating system. */
-  systemReducedMotion: boolean;
-  glass: GlassLevel;
 }
 
 const root = document.documentElement;
@@ -37,7 +29,6 @@ const meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')
 const listeners = new Set<(state: ThemeState) => void>();
 
 const isMode = (v: unknown): v is ThemeMode => MODES.some((m) => m.id === v);
-const isGlass = (v: unknown): v is GlassLevel => GLASS_LEVELS.some((g) => g.id === v);
 const themeOf = (id: unknown) => THEMES.find((t) => t.id === id);
 const paletteFor = (scheme: Scheme, v: unknown): ThemeId =>
   themeOf(v)?.scheme === scheme ? (v as ThemeId) : DEFAULT_THEME[scheme];
@@ -47,8 +38,6 @@ const palettes: Record<Scheme, ThemeId> = {
   light: paletteFor("light", root.dataset.themeLight),
   dark: paletteFor("dark", root.dataset.themeDark),
 };
-let reduceMotion = root.dataset.motion === "reduce";
-let glass: GlassLevel = isGlass(root.dataset.glass) ? root.dataset.glass : DEFAULT_GLASS;
 
 const scheme = (): Scheme =>
   mode === "dark" || (mode === "system" && media.matches) ? "dark" : "light";
@@ -57,9 +46,6 @@ export const getState = (): ThemeState => ({
   mode,
   scheme: scheme(),
   palettes: { ...palettes },
-  reduceMotion,
-  systemReducedMotion: motionMedia.matches,
-  glass,
 });
 
 function save() {
@@ -67,9 +53,6 @@ function save() {
     localStorage.setItem(STORAGE_KEYS.mode, mode);
     localStorage.setItem(STORAGE_KEYS.light, palettes.light);
     localStorage.setItem(STORAGE_KEYS.dark, palettes.dark);
-    if (reduceMotion) localStorage.setItem(STORAGE_KEYS.motion, "reduce");
-    else localStorage.removeItem(STORAGE_KEYS.motion);
-    localStorage.setItem(STORAGE_KEYS.glass, glass);
   } catch {
     // Storage unavailable (private mode): the choice lasts for this page only.
   }
@@ -82,7 +65,7 @@ const notify = () => {
 
 /** Crossfades a change of palette, unless motion is reduced or unsupported. */
 function transition(update: () => void) {
-  if (reduceMotion || motionMedia.matches || !document.startViewTransition) update();
+  if (motionMedia.matches || !document.startViewTransition) update();
   else document.startViewTransition(update);
 }
 
@@ -108,23 +91,6 @@ export function setMode(next: ThemeMode) {
   apply(true);
 }
 
-export function setReduceMotion(next: boolean) {
-  reduceMotion = next;
-  if (next) root.dataset.motion = "reduce";
-  else delete root.dataset.motion;
-  save();
-  notify();
-}
-
-export function setGlass(next: GlassLevel) {
-  glass = next;
-  // medium is the base look in tokens.css, so it needs no attribute.
-  if (next === DEFAULT_GLASS) delete root.dataset.glass;
-  else root.dataset.glass = next;
-  save();
-  notify();
-}
-
 export function subscribe(fn: (state: ThemeState) => void) {
   listeners.add(fn);
   fn(getState());
@@ -134,4 +100,3 @@ export function subscribe(fn: (state: ThemeState) => void) {
 media.addEventListener("change", () => {
   if (mode === "system") apply(true);
 });
-motionMedia.addEventListener("change", notify);

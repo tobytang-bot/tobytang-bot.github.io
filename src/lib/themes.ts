@@ -21,16 +21,7 @@ export const MODES = [
   { id: "dark", label: "深色" },
 ] as const;
 
-export const GLASS_LEVELS = [
-  { id: "low", label: "低" },
-  { id: "medium", label: "中" },
-  { id: "high", label: "高" },
-] as const;
-
-export const DEFAULT_GLASS: GlassLevel = "medium";
-
 export type ThemeMode = (typeof MODES)[number]["id"];
-export type GlassLevel = (typeof GLASS_LEVELS)[number]["id"];
 
 export const STORAGE_KEYS = {
   mode: "blog.theme.mode",
@@ -38,10 +29,6 @@ export const STORAGE_KEYS = {
   light: "blog.theme.color",
   /** Dark palette. */
   dark: "blog.theme.dark",
-  /** "reduce" when the reader turned on Reduce Motion. */
-  motion: "blog.motion",
-  /** Liquid Glass intensity: low | medium | high. */
-  glass: "blog.glass",
 } as const;
 
 /** Values of the previous single `theme` key, as [mode, light palette?]. */

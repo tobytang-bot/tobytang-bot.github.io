@@ -17,4 +17,3 @@ dialog[data-search-dialog][open] {
 @media (prefers-reduced-motion: reduce) {
   dialog[data-search-dialog] { transition: none; transform: none; }
 }
-:root[data-motion="reduce"] dialog[data-search-dialog] { transition: none; transform: none; }

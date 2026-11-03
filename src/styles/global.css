@@ -72,7 +72,7 @@ img {
   animation-timing-function: ease;
 }
 
-/* Reduced motion: the system setting, or the panel's switch (data-motion). */
+/* Reduced motion follows the system setting. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -82,13 +82,4 @@ img {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
-}
-
-:root[data-motion="reduce"] *,
-:root[data-motion="reduce"] *::before,
-:root[data-motion="reduce"] *::after {
-  animation-duration: 0.01ms !important;
-  animation-iteration-count: 1 !important;
-  transition-duration: 0.01ms !important;
-  scroll-behavior: auto !important;
 }
