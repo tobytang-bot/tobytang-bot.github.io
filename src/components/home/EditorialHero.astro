@@ -1,18 +1,24 @@
 ---
+import HeroGraph from "./HeroGraph.astro";
+import type { GraphTopic } from "../../lib/motion/graph-data";
 interface Props {
   topics: { id: string; label: string; href: string; filter: boolean }[];
+  nodes: GraphTopic[];
 }
-const { topics } = Astro.props;
+const { topics, nodes } = Astro.props;
 ---
 
 <section class="editorial-hero" aria-labelledby="home-title">
-  <div class="hero-kicker"><p>技术笔记与实践</p><span>笔记 / 实践 / 开源资源</span></div>
-  <div class="hero-heading">
-    <h1 id="home-title">记录工程，<br />连接知识<span>。</span></h1>
-    <p>你好，我是 Toby。<br />这里收藏解决问题的过程，<br />以及值得再次使用的方法。</p>
+  <div class="hero-main">
+    <div class="hero-kicker"><p>技术笔记与实践</p><span>笔记 / 实践 / 开源资源</span></div>
+    <div class="hero-heading">
+      <h1 id="home-title">记录工程，<br />连接知识<span>。</span></h1>
+      <p>你好，我是 Toby。<br />这里收藏解决问题的过程，<br />以及值得再次使用的方法。</p>
+    </div>
+    <nav class="topic-ribbon" aria-label="探索文章主题">
+      <span>探索主题</span>
+      {topics.map((topic) => <a href={topic.href} data-home-topic={topic.filter ? topic.id : undefined}>{topic.label}</a>)}
+    </nav>
   </div>
-  <nav class="topic-ribbon" aria-label="探索文章主题">
-    <span>探索主题</span>
-    {topics.map((topic) => <a href={topic.href} data-home-topic={topic.filter ? topic.id : undefined}>{topic.label}</a>)}
-  </nav>
+  <HeroGraph nodes={nodes} />
 </section>

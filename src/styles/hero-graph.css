@@ -1,0 +1,47 @@
+.hero-graph {
+  position: relative;
+  min-width: 0;
+  padding: 1.5rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: radial-gradient(ellipse at top, color-mix(in srgb, var(--accent) 7%, transparent), transparent 75%);
+}
+.hero-graph canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.graph-heading { position: relative; text-align: center; font-size: var(--text-sm); }
+.graph-heading small { display: block; margin-top: 0.25rem; color: var(--ink-3); }
+.graph-topics {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 2rem 1rem;
+  margin: 3rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.graph-topics a {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+  text-decoration: none;
+  transition: border-color 160ms ease, color 160ms ease;
+}
+.graph-topics small { color: var(--ink-3); }
+.graph-topics a:hover, .graph-topics a:focus-visible { color: var(--accent); border-color: var(--accent); }
+@media (max-width: 1100px) {
+  .graph-topics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 560px) {
+  .graph-topics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

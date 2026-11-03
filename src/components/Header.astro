@@ -8,6 +8,7 @@ const path = Astro.url.pathname;
 <header class="site-header">
   <div class="inner">
     <a class="wordmark" href="/" aria-label={SITE.title}>
+      <img class="wordmark-logo" src="/logo.png" alt="" width="32" height="32" />
       <span class="wordmark-name">{SITE.title}</span>
     </a>
 
@@ -55,6 +56,14 @@ const path = Astro.url.pathname;
     letter-spacing: -0.01em;
   }
 
+  .wordmark-logo {
+    flex: none;
+    width: 2rem;
+    height: 2rem;
+    margin-right: 0.15rem;
+    border-radius: 50%;
+  }
+
   .wordmark-name {
     font-weight: 650;
     overflow: hidden;
@@ -83,6 +92,5 @@ const path = Astro.url.pathname;
     nav { margin:0; gap:1.25rem; }
     .actions { gap:0.4rem; }
     .actions :global(.search-trigger) { padding:0 0.5rem; }
-    .actions :global(.search-trigger svg) { display:none; }
   }
 </style>

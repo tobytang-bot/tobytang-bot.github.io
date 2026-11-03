@@ -4,6 +4,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 import ArticleList from "../components/ArticleList.astro";
 import EditorialHero from "../components/home/EditorialHero.astro";
 import FeatureCard from "../components/home/FeatureCard.astro";
+import { graphTopics } from "../lib/motion/graph-data";
 import { getArticles } from "../lib/content";
 import { getResources, resourceFiles, resourceUrl, KIND_LABEL } from "../lib/resources";
 import { ancestry, getTopics, inTopic, topicUrl } from "../lib/topics";
@@ -27,6 +28,8 @@ const featuredTopics = SITE.featuredTopics
   .filter((id) => topics.has(id) && inTopic(id, articles, topics).length > 0)
   .map((id) => ({ id, label: topics.get(id)!.data.title, href: topicUrl(id), filter: recentTopics.has(id) }));
 
+const graphNodes = graphTopics(topics, [...articles, ...resources]);
+
 const website = {
   "@type": "WebSite",
   name: SITE.title,
@@ -39,7 +42,7 @@ const website = {
 
 <BaseLayout title={SITE.title} structuredData={[website]}>
   <div class="editorial-home" data-editorial-home>
-    <EditorialHero topics={featuredTopics} />
+    <EditorialHero topics={featuredTopics} nodes={graphNodes} />
     <div class="editorial-columns">
       <section aria-labelledby="recent-title">
         <div class="editorial-section-head">
