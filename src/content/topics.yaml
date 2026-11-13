@@ -22,6 +22,8 @@
   parent: linux
 - id: mysql
   title: MySQL
+- id: postgresql
+  title: PostgreSQL
 - id: elasticsearch
   title: Elasticsearch
 - id: docker
